@@ -48,5 +48,40 @@ enum SampleData {
         items.forEach(context.insert)
         try? context.save()
     }
+
+    /// Sample change notes for the Develop tab, enough to span two PDF pages.
+    @MainActor
+    static func seedDevNotesIfEmpty(_ context: ModelContext) {
+        guard isRequested, (try? context.fetchCount(FetchDescriptor<DevNote>())) == 0 else { return }
+        let version = Bundle.main.jotVersion
+        let samples: [(String, DevNote.Category, String, Bool)] = [
+            ("The orb covers the last card in Inbox when I scroll to the bottom. Needs more bottom padding.", .bug, "Inbox", false),
+            ("Overdue items from yesterday show only a time, so 2 PM yesterday looks like it's after 8 AM today. Show the day.", .bug, "Today", false),
+            ("Swiping to snooze feels slow, maybe snooze straight to tomorrow on a long swipe.", .change, "Inbox", false),
+            ("Make the confirmation card stay a bit longer when it's a reminder with a time, I want to check the time it picked.", .change, "Today", false),
+            ("Search should also find things by date, like typing Thursday.", .idea, "Inbox", false),
+            ("Let me record a note to someone else and have it drafted as a message.", .idea, "Today", false),
+            ("The thinking shimmer is too subtle in light mode.", .bug, "Today", false),
+            ("Add a weekly review on Sunday evening with everything done this week.", .idea, "Settings", false),
+            ("Group tasks by project when I say a project name.", .idea, "Inbox", false),
+            ("Haptic on completing a task could be a bit stronger.", .change, "Today", false),
+            ("Calendar events should open in the Calendar app when tapped.", .change, "Today", false),
+            ("Transcription sometimes splits names, like Dish oom instead of Dishoom. Maybe let me add custom words.", .bug, "Today", false),
+            ("Onboarding page 2 words wrap awkwardly.", .bug, "Onboarding", true),
+            ("Rename the Develop tab to something friendlier if I ever ship it.", .idea, "Develop", true),
+        ]
+        for (index, sample) in samples.enumerated() {
+            let note = DevNote(
+                text: sample.0,
+                category: sample.1,
+                screen: sample.2,
+                appVersion: version,
+                createdAt: .now.addingTimeInterval(Double(index - samples.count) * 3600)
+            )
+            note.isDone = sample.3
+            context.insert(note)
+        }
+        try? context.save()
+    }
 }
 #endif

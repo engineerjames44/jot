@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.jotAnimation) private var animation
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("JotHasOnboarded") private var hasOnboarded = false
+    @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
 
     @State private var permissions = PermissionCenter()
     @State private var keyInput = ""
@@ -37,6 +38,8 @@ struct SettingsView: View {
                             }
                         }
                     }
+
+                    section("Developer") { developerCard }
 
                     section("About") { aboutCard }
                 }
@@ -185,6 +188,32 @@ struct SettingsView: View {
         } catch {
             keyMessage = KeyMessage(text: error.localizedDescription, isError: true)
         }
+    }
+
+    // MARK: Developer
+
+    private var developerCard: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "hammer.fill")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.jotAccent)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Develop tab")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                Text("Record change notes about Jot and export them. Shake anywhere to add one.")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Toggle("Develop tab", isOn: $devModeEnabled)
+                .labelsHidden()
+                .tint(Color.jotAccent)
+        }
+        .jotCard()
     }
 
     // MARK: About

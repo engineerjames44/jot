@@ -183,7 +183,7 @@ struct ItemDetailView: View {
 
 // MARK: - Playback
 
-private struct PlaybackCard: View {
+struct PlaybackCard: View {
     let playback: AudioPlayback
     let color: Color
 

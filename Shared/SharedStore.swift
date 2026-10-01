@@ -17,11 +17,11 @@ enum SharedStore {
         migrateLegacyStoreIfNeeded()
         let configuration = ModelConfiguration(url: storeURL)
         do {
-            return try ModelContainer(for: JotItem.self, configurations: configuration)
+            return try ModelContainer(for: JotItem.self, DevNote.self, configurations: configuration)
         } catch {
             // Never crash-loop on launch; run in memory and surface it in the console.
             print("Jot: couldn't open the store at \(storeURL.path): \(error)")
-            return try! ModelContainer(for: JotItem.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            return try! ModelContainer(for: JotItem.self, DevNote.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         }
     }()
 
