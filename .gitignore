@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+DerivedData/
+build/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# Secrets — never commit keys or local config
+*.xcconfig.local
+Secrets.xcconfig
+.env
+*.p8
+*.p12
+*.mobileprovision
