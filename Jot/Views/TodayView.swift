@@ -57,6 +57,7 @@ struct TodayView: View {
     /// Items mid-completion: their check fills in before they fade away.
     @State private var completing: Set<UUID> = []
     @State private var completedCount = 0
+    @State private var openRow: UUID?
 
     var body: some View {
         NavigationStack {
@@ -180,27 +181,35 @@ struct TodayView: View {
         case .calendar(let event):
             CalendarEventCard(event: event)
         case .item(let item):
-            let checkable = item.kind == .task || item.kind == .reminder
-            NavigationLink(value: item) {
-                ItemCard(
-                    item: item,
-                    time: entry.time,
-                    isOverdue: entry.isOverdue,
-                    reservesCheckSpace: checkable
-                )
-            }
-            .buttonStyle(.pressable)
-            .overlay(alignment: .trailing) {
-                if checkable {
-                    Button {
-                        complete(item)
-                    } label: {
-                        CheckCircle(isChecked: completing.contains(item.id), color: item.kind.color)
-                            .padding(JotMetrics.cardPadding)
-                            .contentShape(.rect)
+            let checkable = ItemActions.canComplete(item)
+            SwipeableRow(
+                item: item,
+                openRow: $openRow,
+                onComplete: { complete(item) },
+                onSnooze: { option in withAnimation(animation) { ItemActions.snooze(item, option, in: modelContext) } },
+                onDelete: { withAnimation(animation) { ItemActions.delete(item, in: modelContext) } }
+            ) {
+                NavigationLink(value: item) {
+                    ItemCard(
+                        item: item,
+                        time: entry.time,
+                        isOverdue: entry.isOverdue,
+                        reservesCheckSpace: checkable
+                    )
+                }
+                .buttonStyle(.pressable)
+                .overlay(alignment: .trailing) {
+                    if checkable {
+                        Button {
+                            complete(item)
+                        } label: {
+                            CheckCircle(isChecked: completing.contains(item.id), color: item.kind.color)
+                                .padding(JotMetrics.cardPadding)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Complete \(item.title)")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Complete \(item.title)")
                 }
             }
             .landingTarget(item.id)
@@ -216,11 +225,9 @@ struct TodayView: View {
             // Let the check land before the card leaves.
             try? await Task.sleep(for: .milliseconds(550))
             withAnimation(animation) {
-                item.toggleCompleted()
+                ItemActions.toggleComplete(item, in: modelContext)
                 completing.remove(item.id)
             }
-            try? modelContext.save()
-            await ReminderScheduler.refill(using: modelContext)
         }
     }
 

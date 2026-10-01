@@ -368,3 +368,106 @@ extension EnvironmentValues {
     /// False for tabs that are kept alive but not on screen.
     @Entry var isActiveTab = true
 }
+
+// MARK: - Chips
+
+/// A row of capsule chips with an animated selection pill.
+struct ChipPicker<Value: Hashable>: View {
+    struct Option {
+        let value: Value
+        let label: String
+        var color: Color?
+        var count: Int?
+    }
+
+    let options: [Option]
+    @Binding var selection: Value
+    /// Leading/trailing space inside the scroll area, so chips line up with content.
+    var inset: CGFloat = JotMetrics.gutter
+
+    @Namespace private var namespace
+    @Environment(\.jotAnimation) private var animation
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(options, id: \.value) { option in
+                    chip(option)
+                }
+            }
+            .padding(.horizontal, inset)
+        }
+        .scrollIndicators(.hidden)
+        .sensoryFeedback(.selection, trigger: selection)
+    }
+
+    private func chip(_ option: Option) -> some View {
+        let isSelected = option.value == selection
+        return Button {
+            withAnimation(animation) { selection = option.value }
+        } label: {
+            HStack(spacing: 6) {
+                if let color = option.color {
+                    KindDot(color: color, size: 7)
+                }
+                Text(option.label)
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                if let count = option.count {
+                    Text("\(count)")
+                        .font(.jotTimeSmall)
+                        .foregroundStyle(Color.jotTextSecondary)
+                        .contentTransition(.numericText(value: Double(count)))
+                }
+            }
+            .foregroundStyle(isSelected ? Color.jotTextPrimary : Color.jotTextSecondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background {
+                if isSelected {
+                    Capsule()
+                        .fill(Color.jotRaised)
+                        .matchedGeometryEffect(id: "selection", in: namespace)
+                }
+            }
+            .overlay(Capsule().strokeBorder(Color.jotBorder, lineWidth: 1))
+            .contentShape(.capsule)
+        }
+        .buttonStyle(.pressable)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+// MARK: - Search highlighting
+
+enum SearchHighlight {
+    /// `text` with every case- and accent-insensitive match of `query` highlighted.
+    static func attributed(_ text: String, query: String) -> AttributedString {
+        var result = AttributedString(text)
+        let query = query.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else { return result }
+
+        var searchStart = text.startIndex
+        while searchStart < text.endIndex,
+              let match = text.range(of: query, options: [.caseInsensitive, .diacriticInsensitive], range: searchStart..<text.endIndex) {
+            if let range = Range(match, in: result) {
+                result[range].backgroundColor = Color.jotAccent.opacity(0.3)
+                result[range].foregroundColor = Color.jotTextPrimary
+            }
+            searchStart = match.upperBound
+        }
+        return result
+    }
+
+    /// A short excerpt around the first match, for showing why something matched.
+    static func snippet(_ text: String, query: String, radius: Int = 32) -> String? {
+        let query = query.trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty,
+              let match = text.range(of: query, options: [.caseInsensitive, .diacriticInsensitive])
+        else { return nil }
+        let start = text.index(match.lowerBound, offsetBy: -radius, limitedBy: text.startIndex) ?? text.startIndex
+        let end = text.index(match.upperBound, offsetBy: radius, limitedBy: text.endIndex) ?? text.endIndex
+        let prefix = start > text.startIndex ? "…" : ""
+        let suffix = end < text.endIndex ? "…" : ""
+        return prefix + text[start..<end].trimmingCharacters(in: .whitespaces) + suffix
+    }
+}
