@@ -14,10 +14,16 @@
 			</array>
 		</dict>
 	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.jamescronin.Jot.brief</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<!-- Lets a recording started from the Action Button keep going if the phone is locked. -->
 		<string>audio</string>
+		<!-- Refreshes the morning brief shortly before it's delivered. -->
+		<string>fetch</string>
 	</array>
 	<key>UILaunchScreen</key>
 	<dict>

@@ -4,9 +4,9 @@ import UserNotifications
 
 /// Keeps local notifications in sync with Jot's reminders.
 ///
-/// iOS keeps at most 64 pending notifications per app, so this schedules only
-/// the 64 soonest and is re-run on launch, on returning to the foreground, and
-/// whenever reminders change.
+/// iOS keeps at most 64 pending notifications per app. Morning briefs get the
+/// slots they need, and reminders fill the rest, soonest first. Re-run on launch,
+/// on returning to the foreground, whenever items change, and before each brief.
 @MainActor
 enum ReminderScheduler {
     static let pendingLimit = 64
@@ -18,20 +18,27 @@ enum ReminderScheduler {
         let descriptor = FetchDescriptor<JotItem>(
             predicate: #Predicate { $0.kindRaw == reminderKind && !$0.isCompleted && $0.dueDate != nil }
         )
-        let reminders = (try? context.fetch(descriptor)) ?? []
+        let open = (try? context.fetch(descriptor)) ?? []
 
-        let upcoming = reminders
+        let reminders = open
             .compactMap { item -> (JotItem, Date)? in
                 guard let next = item.nextOccurrence(onOrAfter: now), next > now else { return nil }
                 return (item, next)
             }
             .sorted { $0.1 < $1.1 }
-            .prefix(pendingLimit)
+
+        let briefs = MorningBrief.requests(using: context, now: now)
+        let upcoming = reminders.prefix(pendingLimit - briefs.count)
 
         center.removeAllPendingNotificationRequests()
         // Don't ask before onboarding has explained why.
         let mayPrompt = UserDefaults.standard.bool(forKey: "JotHasOnboarded")
-        guard !upcoming.isEmpty, await ensureAuthorized(center, mayPrompt: mayPrompt) else { return }
+        MorningBrief.scheduleBackgroundRefresh(now: now)
+        guard !(upcoming.isEmpty && briefs.isEmpty), await ensureAuthorized(center, mayPrompt: mayPrompt) else { return }
+
+        for brief in briefs {
+            try? await center.add(brief)
+        }
 
         for (item, fireDate) in upcoming {
             let content = UNMutableNotificationContent()

@@ -253,7 +253,7 @@ struct TodayView: View {
             let id = item.id.uuidString
             switch item.kind {
             case .event:
-                guard let start = item.nextOccurrence(onOrAfter: startOfDay), start < endOfDay else { continue }
+                guard let start = item.occurrence(onDayOf: now) else { continue }
                 timed.append(TimelineEntry(id: id, time: start, isOverdue: false, source: .item(item)))
                 content.eventCount += 1
 

@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 struct SettingsView: View {
@@ -24,6 +25,8 @@ struct SettingsView: View {
                     header
 
                     section("Claude") { apiKeyCard }
+
+                    section("Morning brief") { MorningBriefCard() }
 
                     section("Permissions") {
                         VStack(spacing: 10) {
@@ -233,5 +236,130 @@ private extension Bundle {
         let version = infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
+    }
+}
+
+// MARK: - Morning brief
+
+private struct MorningBriefCard: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.jotAnimation) private var animation
+    @AppStorage(MorningBrief.Keys.enabled) private var isEnabled = false
+    @AppStorage(MorningBrief.Keys.minutes) private var minutes = MorningBrief.defaultMinutes
+    @Query private var items: [JotItem]
+    @State private var previewSent = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                Image(systemName: "sunrise.fill")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color.jotReminder)
+                    .frame(width: 44, height: 44)
+                    .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Daily brief")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Text("Today's events, reminders, and open tasks")
+                        .font(.jotCaption)
+                        .foregroundStyle(Color.jotTextSecondary)
+                }
+                Spacer()
+                Toggle("Daily brief", isOn: $isEnabled)
+                    .labelsHidden()
+                    .tint(Color.jotAccent)
+            }
+
+            if isEnabled {
+                HStack {
+                    Text("Deliver at")
+                        .font(.jotBody)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Spacer()
+                    DatePicker("Deliver at", selection: time, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .tint(Color.jotAccent)
+                }
+
+                BriefPreview(summary: preview)
+
+                Button {
+                    Task {
+                        previewSent = await MorningBrief.sendPreview(using: modelContext)
+                    }
+                } label: {
+                    Label(previewSent ? "Sent. Check your notifications" : "Send a preview now", systemImage: previewSent ? "checkmark" : "paperplane.fill")
+                        .frame(maxWidth: .infinity)
+                        .contentTransition(.opacity)
+                }
+                .buttonStyle(.jotSecondary)
+                .controlSize(.small)
+                .sensoryFeedback(.success, trigger: previewSent) { _, sent in sent }
+            }
+        }
+        .jotCard()
+        .animation(animation, value: isEnabled)
+        .animation(animation, value: previewSent)
+        .onChange(of: isEnabled) { resync() }
+        .onChange(of: minutes) { resync() }
+    }
+
+    private var time: Binding<Date> {
+        Binding(
+            get: { Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now },
+            set: { date in
+                let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+                minutes = (parts.hour ?? 8) * 60 + (parts.minute ?? 0)
+            }
+        )
+    }
+
+    /// The next brief, exactly as it will be delivered.
+    private var preview: MorningBrief.Summary {
+        let day = MorningBrief.upcomingDeliveries().first ?? .now
+        return MorningBrief.summary(for: day, items: items, events: CalendarService.events(on: day))
+    }
+
+    private func resync() {
+        previewSent = false
+        Task { await ReminderScheduler.refill(using: modelContext) }
+    }
+}
+
+/// A notification-shaped preview of the brief.
+private struct BriefPreview: View {
+    let summary: MorningBrief.Summary
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "sunrise.fill")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(Color.jotAccent, in: .rect(cornerRadius: 8, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text(summary.title)
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("PREVIEW")
+                        .font(.jotLabel)
+                        .tracking(1)
+                        .foregroundStyle(Color.jotTextSecondary)
+                }
+                Text(summary.subtitle)
+                    .font(.subheadline)
+                Text(summary.body)
+                    .font(.subheadline)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(Color.jotTextPrimary)
+        }
+        .padding(12)
+        .background(Color.jotRaised, in: .rect(cornerRadius: 18, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Preview: \(summary.title). \(summary.subtitle). \(summary.body)")
     }
 }

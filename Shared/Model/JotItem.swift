@@ -100,6 +100,17 @@ final class JotItem {
         return next
     }
 
+    /// When this item falls on `day`, or nil if it doesn't. Unlike `nextOccurrence`,
+    /// a one-off item dated before `day` doesn't count.
+    func occurrence(onDayOf day: Date, calendar: Calendar = .current) -> Date? {
+        let start = calendar.startOfDay(for: day)
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start),
+              let next = nextOccurrence(onOrAfter: start, calendar: calendar),
+              next >= start, next < end
+        else { return nil }
+        return next
+    }
+
     /// Completing a recurring item rolls it forward to its next occurrence instead.
     func toggleCompleted(now: Date = .now) {
         if !isCompleted, let recurrence, let dueDate {

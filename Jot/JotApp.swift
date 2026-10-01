@@ -38,5 +38,8 @@ struct JotApp: App {
                 }
         }
         .modelContainer(SharedStore.container)
+        .backgroundTask(.appRefresh(MorningBrief.taskIdentifier)) {
+            await MorningBrief.handleBackgroundRefresh()
+        }
     }
 }

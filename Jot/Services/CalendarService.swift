@@ -46,12 +46,18 @@ final class CalendarService {
             return
         }
 
+        todaysEvents = Self.events(on: day, store: store)
+    }
+
+    /// Events overlapping `day`, or nothing without full access.
+    nonisolated static func events(on day: Date, store: EKEventStore = EKEventStore()) -> [CalendarEvent] {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return [] }
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: day)
-        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return }
+        guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return [] }
 
         let predicate = store.predicateForEvents(withStart: start, end: end, calendars: nil)
-        todaysEvents = store.events(matching: predicate)
+        return store.events(matching: predicate)
             .map { event in
                 CalendarEvent(
                     id: event.calendarItemIdentifier + "@" + event.startDate.timeIntervalSince1970.description,
