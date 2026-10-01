@@ -28,6 +28,17 @@ Implement `AudioSource` (return an `AsyncStream<AudioChunk>` of PCM buffers in a
 format, finish it on `stop()`) and pass it to `CaptureController(source:)` in
 `JotApp`. Transcription converts to the analyzer's format itself.
 
+## Targets
+
+| Target | What it is |
+| --- | --- |
+| `Jot` | The app |
+| `JotWidgets` | Home/Lock Screen widgets, the Control Center control, and the capture Live Activity |
+
+`Shared/` is compiled into both: the SwiftData model, design system, brand colors,
+the App Group store, Live Activity attributes, and the record intent. Both targets
+use the App Group `group.com.jamescronin.Jot` so they read the same items.
+
 ## Setup
 
 1. Open `Jot.xcodeproj` in Xcode 26.

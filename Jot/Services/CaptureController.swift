@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 import SwiftUI
+import WidgetKit
 
 /// Drives the hold-to-record loop: record → transcribe → classify → save.
 @MainActor
@@ -85,6 +86,11 @@ final class CaptureController {
     private let classify: Classify
 
     private var isHeld = false
+    /// Started from the Action Button, Control Center, or a widget: no finger on
+    /// the orb, so recording stops after a pause in speech (or a tap on the orb).
+    private(set) var isHandsFree = false
+    private var heardSpeechAt: Date?
+    private let liveActivity = LiveActivityController()
     private var context: ModelContext?
     private var transcriptionTask: Task<String, any Error>?
     private var recordingTask: Task<String?, Never>?
@@ -134,11 +140,24 @@ final class CaptureController {
 
                 animate { phase = .recording(since: .now) }
                 emit(.start)
+                liveActivity.start()
                 // Released while permissions or the engine were still starting up.
                 if !isHeld { finishRecording() }
             } catch {
                 fail(error)
             }
+        }
+    }
+
+    /// Starts recording without a held orb, or finishes a hands-free recording.
+    func toggleHandsFree(into context: ModelContext) {
+        if isRecording {
+            endCapture(into: context)
+        } else if !phase.isBusy {
+            self.context = context
+            isHandsFree = true
+            heardSpeechAt = nil
+            beginCapture()
         }
     }
 
@@ -153,6 +172,7 @@ final class CaptureController {
         guard case .recording(let since) = phase, let context else { return }
         source.stop()
         emit(.stop)
+        isHandsFree = false
 
         let transcription = transcriptionTask
         let recording = recordingTask
@@ -180,6 +200,7 @@ final class CaptureController {
                 }
                 liveTranscript = transcript
                 animate { phase = .classifying }
+                liveActivity.thinking(transcript: transcript)
 
                 do {
                     let result = try await classify(transcript)
@@ -206,6 +227,17 @@ final class CaptureController {
         audioFile: String? = nil,
         into context: ModelContext
     ) -> JotItem {
+        Self.insert(result, transcript: transcript, audioFile: audioFile, into: context)
+    }
+
+    /// Creates and saves an item from Claude's result. Also used by Siri.
+    @discardableResult
+    static func insert(
+        _ result: ClassifiedItem,
+        transcript: String,
+        audioFile: String? = nil,
+        into context: ModelContext
+    ) -> JotItem {
         let item = JotItem(
             kind: result.type,
             title: result.title.isEmpty ? String(transcript.prefix(60)) : result.title,
@@ -217,6 +249,7 @@ final class CaptureController {
         item.audioFileName = audioFile
         context.insert(item)
         try? context.save()
+        WidgetCenter.shared.reloadAllTimelines()
         return item
     }
 
@@ -229,6 +262,7 @@ final class CaptureController {
         }
         emit(notice == nil ? .success : .failure)
         scheduleDismiss(after: notice == nil ? 4 : 6)
+        liveActivity.saved(kind: item.kind, title: item.title, when: item.dueDate.map { JotDate.short($0) })
     }
 
     /// Removes the card; on Today it flies into its place in the timeline.
@@ -252,6 +286,7 @@ final class CaptureController {
             context.delete(item)
         }
         try? context.save()
+        WidgetCenter.shared.reloadAllTimelines()
         Task { await ReminderScheduler.refill(using: context) }
     }
 
@@ -273,11 +308,26 @@ final class CaptureController {
         if levels.count > Self.levelCount {
             levels.removeFirst(levels.count - Self.levelCount)
         }
+        if isHandsFree { checkForPause(newLevels) }
+    }
+
+    /// Hands-free: stop after ~2 s of quiet once speech has started, or give up
+    /// if nothing is said for 8 s. Recordings are capped at 90 s.
+    private func checkForPause(_ newLevels: [Float]) {
+        guard case .recording(let since) = phase, let context else { return }
+        let now = Date.now
+        if newLevels.contains(where: { $0 > 0.35 }) { heardSpeechAt = now }
+        let elapsed = now.timeIntervalSince(since)
+        let quietFor = heardSpeechAt.map { now.timeIntervalSince($0) }
+        if (quietFor ?? 0) > 2.2 || (heardSpeechAt == nil && elapsed > 8) || elapsed > 90 {
+            endCapture(into: context)
+        }
     }
 
     private func updateTranscript(_ text: String) {
         guard phase.isBusy else { return }
         animate { liveTranscript = text }
+        liveActivity.updateTranscript(text)
     }
 
     private func emit(_ feedback: Feedback) {
@@ -294,9 +344,11 @@ final class CaptureController {
     }
 
     private func fail(message: String) {
+        isHandsFree = false
         animate { phase = .failed(message) }
         emit(.failure)
         scheduleDismiss(after: 5)
+        liveActivity.failed(message)
     }
 
     private func scheduleDismiss(after seconds: Double) {

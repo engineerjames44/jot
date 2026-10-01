@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import WidgetKit
 
 /// Quick snooze choices offered from swipe actions.
 enum SnoozeOption: CaseIterable, Identifiable {
@@ -73,6 +74,7 @@ enum ItemActions {
     /// Saves and re-syncs reminder notifications.
     static func commit(_ context: ModelContext) {
         try? context.save()
+        WidgetCenter.shared.reloadAllTimelines()
         Task { await ReminderScheduler.refill(using: context) }
     }
 }

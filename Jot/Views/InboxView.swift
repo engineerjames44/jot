@@ -31,14 +31,15 @@ struct InboxView: View {
             .background(Color.jotBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: JotItem.self) { ItemDetailView(item: $0) }
-            .safeAreaInset(edge: .bottom) {
-                if !searchFocused {
-                    CaptureDock()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(animation, value: searchFocused)
         }
+        // On the stack, so the orb stays reachable on pushed screens too.
+        .safeAreaInset(edge: .bottom) {
+            if !searchFocused {
+                CaptureDock()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(animation, value: searchFocused)
     }
 
     // MARK: Header & search

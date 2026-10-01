@@ -105,9 +105,10 @@ struct TodayView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: JotItem.self) { ItemDetailView(item: $0) }
             .refreshable { calendar.reload() }
-            .safeAreaInset(edge: .bottom) { CaptureDock() }
             .sensoryFeedback(.success, trigger: completedCount)
         }
+        // On the stack, so the orb stays reachable on pushed screens too.
+        .safeAreaInset(edge: .bottom) { CaptureDock() }
     }
 
     // MARK: Sections
