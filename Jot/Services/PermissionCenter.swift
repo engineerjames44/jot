@@ -34,7 +34,7 @@ final class PermissionCenter {
         /// Why Jot asks — shown before the system prompt.
         var reason: String {
             switch self {
-            case .microphone: "Hear you while you hold the orb. Never in the background."
+            case .microphone: "Hear you only while you're recording, and never otherwise."
             case .speech: "Turn your voice into words, right here on your iPhone."
             case .notifications: "Nudge you when a reminder is due, and send your morning brief."
             case .calendar: "Show your events on the Today timeline. Jot never changes them."
