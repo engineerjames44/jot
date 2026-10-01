@@ -301,3 +301,70 @@ extension View {
         modifier(StaggeredAppear(index: index))
     }
 }
+
+// MARK: - Dates
+
+enum JotDate {
+    /// "Today 2:00 PM", "Tomorrow 9:00 AM", "Thu 2:00 PM", or "Oct 14 2:00 PM".
+    static func short(_ date: Date, now: Date = .now) -> String {
+        let calendar = Calendar.current
+        let time = date.formatted(date: .omitted, time: .shortened)
+        if calendar.isDateInToday(date) { return "Today \(time)" }
+        if calendar.isDateInTomorrow(date) { return "Tomorrow \(time)" }
+        if calendar.isDateInYesterday(date) { return "Yesterday \(time)" }
+        let days = calendar.dateComponents(
+            [.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)
+        ).day ?? 99
+        if (0..<7).contains(days) {
+            return "\(date.formatted(.dateTime.weekday(.abbreviated))) \(time)"
+        }
+        return "\(date.formatted(.dateTime.month(.abbreviated).day())) \(time)"
+    }
+}
+
+// MARK: - Shimmer
+
+/// A soft highlight sweeping across content, for "thinking" states.
+/// With Reduce Motion on it gently pulses instead.
+struct Shimmer: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var phase: CGFloat = -1
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(reduceMotion ? (phase > 0 ? 0.55 : 1) : 1)
+            .overlay {
+                if !reduceMotion {
+                    GeometryReader { proxy in
+                        LinearGradient(
+                            colors: [.clear, .white.opacity(0.55), .clear],
+                            startPoint: .leading, endPoint: .trailing
+                        )
+                        .frame(width: proxy.size.width * 0.5)
+                        .offset(x: phase * proxy.size.width)
+                    }
+                    .mask(content)
+                    .allowsHitTesting(false)
+                }
+            }
+            .onAppear {
+                let animation: Animation = reduceMotion
+                    ? .easeInOut(duration: 0.9).repeatForever(autoreverses: true)
+                    : .linear(duration: 1.3).repeatForever(autoreverses: false)
+                withAnimation(animation) { phase = 1.2 }
+            }
+    }
+}
+
+extension View {
+    func shimmering() -> some View { modifier(Shimmer()) }
+}
+
+// MARK: - Environment
+
+extension EnvironmentValues {
+    /// Shared by the confirmation card and timeline cards so a new item can fly into place.
+    @Entry var captureNamespace: Namespace.ID?
+    /// False for tabs that are kept alive but not on screen.
+    @Entry var isActiveTab = true
+}

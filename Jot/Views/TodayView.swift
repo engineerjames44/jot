@@ -51,6 +51,7 @@ struct TodayView: View {
     @Environment(CalendarService.self) private var calendar
     @Environment(\.modelContext) private var modelContext
     @Environment(\.jotAnimation) private var animation
+    @Environment(CaptureController.self) private var capture
     @Query(sort: \JotItem.createdAt, order: .reverse) private var items: [JotItem]
 
     /// Items mid-completion: their check fills in before they fade away.
@@ -61,42 +62,49 @@ struct TodayView: View {
         NavigationStack {
             TimelineView(.everyMinute) { context in
                 let content = buildContent(now: context.date)
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        TodayHeader(now: context.date, content: content)
-                            .staggeredAppear(0)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 28) {
+                            TodayHeader(now: context.date, content: content)
+                                .staggeredAppear(0)
 
-                        if !calendar.hasAccess {
-                            CalendarAccessCard()
-                                .staggeredAppear(1)
-                        }
+                            if !calendar.hasAccess {
+                                CalendarAccessCard()
+                                    .staggeredAppear(1)
+                            }
 
-                        if content.isEmpty {
-                            EmptyStateView(
-                                symbol: "sun.horizon.fill",
-                                color: .jotReminder,
-                                title: "A clear day",
-                                message: "Hold the orb and say what's on your mind."
-                            )
-                            .staggeredAppear(2)
-                        } else {
-                            timelineSection(content, now: context.date)
-                            anytimeSection(content)
-                            notesSection(content)
+                            if content.isEmpty {
+                                EmptyStateView(
+                                    symbol: "sun.horizon.fill",
+                                    color: .jotReminder,
+                                    title: "A clear day",
+                                    message: "Hold the orb and say what's on your mind."
+                                )
+                                .staggeredAppear(2)
+                            } else {
+                                timelineSection(content, now: context.date)
+                                anytimeSection(content)
+                                notesSection(content)
+                            }
                         }
+                        .padding(.horizontal, JotMetrics.gutter)
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
+                        .animation(animation, value: content.signature)
                     }
-                    .padding(.horizontal, JotMetrics.gutter)
-                    .padding(.top, 8)
-                    .padding(.bottom, 24)
-                    .animation(animation, value: content.signature)
+                    .scrollIndicators(.hidden)
+                    .onChange(of: capture.landingItemID) { _, id in
+                        // Bring a just-captured item's slot on screen so it can fly into it.
+                        guard let id else { return }
+                        withAnimation(animation) { proxy.scrollTo(id.uuidString, anchor: .center) }
+                    }
                 }
-                .scrollIndicators(.hidden)
             }
             .background(Color.jotBackground.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: JotItem.self) { ItemDetailView(item: $0) }
             .refreshable { calendar.reload() }
-            .safeAreaInset(edge: .bottom) { CaptureBar() }
+            .safeAreaInset(edge: .bottom) { CaptureDock() }
             .sensoryFeedback(.success, trigger: completedCount)
         }
     }
@@ -152,11 +160,12 @@ struct TodayView: View {
         if !content.notes.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 SectionHeader(title: "Recent notes", trailing: "\(content.notes.count)")
-                ForEach(Array(content.notes.enumerated()), id: \.element.id) { index, note in
+                ForEach(Array(content.notes.enumerated()), id: \.element.id.uuidString) { index, note in
                     NavigationLink(value: note) {
                         NoteCard(note: note)
                     }
                     .buttonStyle(.pressable)
+                    .landingTarget(note.id)
                     .staggeredAppear(index + 6)
                 }
             }
@@ -194,6 +203,7 @@ struct TodayView: View {
                     .accessibilityLabel("Complete \(item.title)")
                 }
             }
+            .landingTarget(item.id)
         }
     }
 

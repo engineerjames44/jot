@@ -54,6 +54,8 @@ final class JotItem {
     var transcript: String
     var createdAt: Date
     var isCompleted: Bool
+    /// The original recording in `AudioStore`, if one was kept.
+    var audioFileName: String?
 
     init(
         kind: ItemKind,

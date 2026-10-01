@@ -24,13 +24,22 @@ struct SpeechTranscription: Sendable {
     var locale: Locale = .current
 
     /// Consumes `audio` until it finishes and returns the full transcript.
-    nonisolated func transcribe(_ audio: AsyncStream<AudioChunk>) async throws -> String {
+    /// `onUpdate` receives the words so far, including in-progress guesses, as they arrive.
+    nonisolated func transcribe(
+        _ audio: AsyncStream<AudioChunk>,
+        onUpdate: @escaping @Sendable (String) async -> Void = { _ in }
+    ) async throws -> String {
         guard SpeechTranscriber.isAvailable else { throw TranscriptionError.unavailable }
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else {
             throw TranscriptionError.unsupportedLocale(self.locale)
         }
 
-        let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
+        let transcriber = SpeechTranscriber(
+            locale: locale,
+            transcriptionOptions: [],
+            reportingOptions: [.volatileResults],
+            attributeOptions: []
+        )
         try await Self.ensureModelInstalled(for: transcriber)
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
@@ -38,13 +47,20 @@ struct SpeechTranscription: Sendable {
             throw TranscriptionError.unavailable
         }
 
-        // Collect finalized results concurrently while audio is fed in.
+        // Collect results concurrently while audio is fed in. Volatile results are
+        // quick guesses for the words in progress; final ones replace them.
         let collector = Task {
-            var text = ""
-            for try await result in transcriber.results where result.isFinal {
-                text += String(result.text.characters)
+            var finalized = ""
+            for try await result in transcriber.results {
+                let text = String(result.text.characters)
+                if result.isFinal {
+                    finalized += text
+                    await onUpdate(finalized)
+                } else {
+                    await onUpdate(finalized + text)
+                }
             }
-            return text
+            return finalized
         }
 
         let (input, inputBuilder) = AsyncStream.makeStream(of: AnalyzerInput.self)

@@ -59,7 +59,7 @@ struct InboxView: View {
                     }
                 }
             }
-            .safeAreaInset(edge: .bottom) { CaptureBar() }
+            .safeAreaInset(edge: .bottom) { CaptureDock() }
         }
     }
 
