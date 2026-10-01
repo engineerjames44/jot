@@ -29,7 +29,9 @@ enum ReminderScheduler {
             .prefix(pendingLimit)
 
         center.removeAllPendingNotificationRequests()
-        guard !upcoming.isEmpty, await ensureAuthorized(center) else { return }
+        // Don't ask before onboarding has explained why.
+        let mayPrompt = UserDefaults.standard.bool(forKey: "JotHasOnboarded")
+        guard !upcoming.isEmpty, await ensureAuthorized(center, mayPrompt: mayPrompt) else { return }
 
         for (item, fireDate) in upcoming {
             let content = UNMutableNotificationContent()
@@ -48,12 +50,16 @@ enum ReminderScheduler {
     }
 
     /// Asks for permission the first time there's something to schedule.
-    static func ensureAuthorized(_ center: UNUserNotificationCenter = .current()) async -> Bool {
+    static func ensureAuthorized(
+        _ center: UNUserNotificationCenter = .current(),
+        mayPrompt: Bool = true
+    ) async -> Bool {
         let settings = await center.notificationSettings()
         switch settings.authorizationStatus {
         case .authorized, .provisional, .ephemeral:
             return true
         case .notDetermined:
+            guard mayPrompt else { return false }
             return (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
         default:
             return false

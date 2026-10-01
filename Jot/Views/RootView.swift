@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(CaptureController.self) private var capture
     @Namespace private var captureNamespace
     @State private var screen: Screen = .today
+    @AppStorage("JotHasOnboarded") private var hasOnboarded = false
 
     var body: some View {
         @Bindable var capture = capture
@@ -40,6 +41,9 @@ struct RootView: View {
                         }
                     }
             }
+        }
+        .fullScreenCover(isPresented: Binding(get: { !hasOnboarded }, set: { hasOnboarded = !$0 })) {
+            OnboardingView { hasOnboarded = true }
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }

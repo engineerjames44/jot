@@ -71,21 +71,8 @@ struct CaptureOrb: View {
                     .transition(.opacity)
             }
 
-            // The orb itself.
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.jotAccent.mix(with: .white, by: 0.35), Color.jotAccent, Color.jotAccent.mix(with: .black, by: 0.25)],
-                        center: UnitPoint(x: 0.35, y: 0.3),
-                        startRadius: 2,
-                        endRadius: Self.orbSize * 0.75
-                    )
-                )
-                .overlay(
-                    Circle()
-                        .strokeBorder(.white.opacity(0.25), lineWidth: 1)
-                )
-                .frame(width: Self.orbSize, height: Self.orbSize)
+            // The orb itself (its glow is drawn above, so it reacts to the voice).
+            BrandOrb(size: Self.orbSize, glow: 0)
                 .overlay { orbSymbol }
                 .scaleEffect(scale(recording: recording, level: level))
         }
