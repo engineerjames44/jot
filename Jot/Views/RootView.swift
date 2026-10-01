@@ -11,6 +11,8 @@ struct RootView: View {
     @Namespace private var captureNamespace
     @State private var screen: Screen = .today
     @AppStorage("JotHasOnboarded") private var hasOnboarded = false
+    @State private var orbLocator = OrbLocator()
+    @State private var showingLaunch = true
 
     var body: some View {
         @Bindable var capture = capture
@@ -30,6 +32,14 @@ struct RootView: View {
             }
         }
         .environment(\.captureNamespace, captureNamespace)
+        .environment(orbLocator)
+        .overlay {
+            if showingLaunch {
+                LaunchHandoff(target: hasOnboarded ? orbLocator.frame : nil) {
+                    showingLaunch = false
+                }
+            }
+        }
         .tint(Color.jotAccent)
         .sensoryFeedback(trigger: capture.feedbackTick) { _, _ in capture.feedback.sensory }
         .sheet(item: $capture.editingItem) { item in

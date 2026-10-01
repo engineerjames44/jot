@@ -27,6 +27,8 @@ struct CaptureDock: View {
 
 struct CaptureOrb: View {
     @Environment(CaptureController.self) private var capture
+    @Environment(OrbLocator.self) private var orbLocator
+    @Environment(\.isActiveTab) private var isActiveTab
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
@@ -77,6 +79,9 @@ struct CaptureOrb: View {
                 .scaleEffect(scale(recording: recording, level: level))
         }
         .frame(width: 112, height: 104)
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+            if isActiveTab { orbLocator.frame = frame }
+        }
         .overlay {
             if recording {
                 RadialWaveform(levels: capture.levels)
