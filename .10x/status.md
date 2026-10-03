@@ -12,7 +12,7 @@
 - [x] Planning (engineering-manager, senior-engineer)
 - [x] 1A UI polish (tap latency: verify on device)
 - [x] 1B Reliability (interruption paths: verify on device)
-- [x] 2 Launch requirements (ADR-002) — site branch `jot-classify-api` needs deploy + env vars
+- [x] 2 Launch requirements (ADR-002) — proxy live at www.jamescronin.dev/api/jot/classify
 - [x] 3 UX gaps (Add to Calendar deferred) — ADR-004
 - [—] 4 Subscriptions — dropped (portfolio project)
 - [~] Verification: automated + simulator done (see reviews/); device checklist pending
@@ -23,5 +23,5 @@ See `decisions/engineering-manager/app-launch-readiness.md`.
 
 ## Blockers / needs James
 - SharkNinja IP clearance before public launch
-- Apple Developer / App Store Connect setup, subscription products
-- Vercel + Anthropic key as server secret for the proxy
+- Apple Developer / App Store Connect setup (for TestFlight)
+- Confirm Upstash env vars in Vercel production (proxy is deployed and working)
