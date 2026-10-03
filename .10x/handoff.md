@@ -1,9 +1,11 @@
-# Handoff → Architect/SDE (Phase 2: launch requirements)
-1A and 1B done; see `decisions/sde/app-launch-readiness.md` and `decisions/dba/app-launch-readiness.md`.
+# Handoff → SDE (Phase 3: UX gaps)
+Phase 2 done; see `decisions/sde`, `decisions/security`, ADR-002. Site work lives on jamescronin-dev branch `jot-classify-api` (not pushed).
 
-Next, Phase 2. **Write ADR-002 (classifier proxy) before coding the proxy.** Order:
-1. 2.4 Debug-gate Develop tab, shake, API-key UI, DevNote recorder (no dependencies).
-2. 2.3 PrivacyInfo.xcprivacy for Jot + JotWidgets.
-3. 2.5 Test target `JotTests` + shared schemes; first tests: ReminderScheduler.trigger, ClassifiedItem.dueDate, Inbox grouping, capture watchdog limits.
-4. 2.2 AI disclosure in onboarding + Settings; privacy policy/terms pages (AppFoyer plugin needs a fresh session).
-5. 2.1 Proxy (ADR-002): Next.js route in jamescronin-dev, client `ProxyClaudeClassifier`. Deploy + secrets need James.
+Phase 3 needs schema V2 (see `decisions/dba/app-launch-readiness.md`): `needsClassification`, `classifiedBy`, `parentID`. Write the V2 migration first, then:
+1. 3.5 Re-sort / retry classification (uses needsClassification).
+2. 3.6 Follow-ups on any item (parentID) — James's note #1.
+3. 3.2 Undo for swipe-delete.
+4. 3.3 Notification tap opens item; Done/Snooze actions.
+5. 3.4 Widget: row taps open item; record only via button.
+6. 3.1 Events → "Add to Calendar" (write-only access) + event alerts.
+7. 3.7 Mic-denied path with Open Settings.

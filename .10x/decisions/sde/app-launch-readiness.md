@@ -19,5 +19,14 @@
 | 1B.4 Coalesced refill + brief preview + recurrence start | 0fd6a66 | Single in-flight refill with one rerun; reminder fields snapshotted before awaits; preview id `brief-preview` preserved. Recurring reminders with a future first date get a one-off trigger first. Monthly-on-31st still skips short months (iOS calendar trigger limitation) — documented, not fixed. |
 | 1B.5 Background task around classification | 0fd6a66 | `beginBackgroundTask` around transcription + classification. |
 
+## Phase 2 — Launch requirements (code done; deploy + accounts need James)
+| Task | Commit | Notes |
+|---|---|---|
+| 2.4 Debug-only developer tools | b41190a | Develop folder, shake, quick dev note, API-key settings, DevMode all `#if DEBUG`. Release build verified. James records change notes from Debug builds now. |
+| 2.3 Privacy manifests | b41190a, 4f222ac | App: UserDefaults CA92.1; collects OtherUserContent + DeviceID (install ID), not linked, no tracking, app functionality. Widgets: nothing. Both verified in built bundles. |
+| 2.5 Test target + shared scheme | 4d83875 | Hand-added `JotTests` (unit-test bundle hosted in Jot) to pbxproj; shared `Jot.xcscheme`. 18 Swift Testing tests: date parsing, recurrence, triggers, sorting errors. |
+| 2.1 Proxy (ADR-002) | app 76a68fb; site `jot-classify-api` branch | `/api/jot/classify` in jamescronin-dev (branch, not pushed). Verified locally: 400s for bad input, real classification in ~1.5 s, logs carry no transcript. App `ProxyClassifier` + `SortingError`; `Classifier.classify` is the single entry point (capture + Siri). Debug: `-JotAPIBaseURL`, `-JotDemoRealSorting`. |
+| 2.2 AI disclosure + consent | 4f222ac; site privacy page | Smart sorting switch (off by default) in onboarding + Settings; `Classifier` refuses without it (`SortingError.notAllowed`). Privacy policy at /jot/privacy on the site branch. |
+
 ## Tech debt
 - 450 ms sleep before delete is a timing assumption; replace with deleting in the parent's `onChange(of: path)` if it ever races.
