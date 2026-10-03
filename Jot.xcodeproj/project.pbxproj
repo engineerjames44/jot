@@ -18,6 +18,13 @@
 			remoteGlobalIDString = B10000000000000000000010;
 			remoteInfo = JotWidgets;
 		};
+		D1000000000000000000000B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000010;
+			remoteInfo = Jot;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -37,6 +44,7 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000003 /* Jot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Jot.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000003 /* JotWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = JotWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D10000000000000000000003 /* JotTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = JotTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -53,6 +61,11 @@
 		C10000000000000000000004 /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Shared;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000004 /* JotTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = JotTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -72,6 +85,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D10000000000000000000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -81,6 +101,7 @@
 				A10000000000000000000004 /* Jot */,
 				B10000000000000000000004 /* JotWidgets */,
 				C10000000000000000000004 /* Shared */,
+				D10000000000000000000004 /* JotTests */,
 				A10000000000000000000002 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +111,7 @@
 			children = (
 				A10000000000000000000003 /* Jot.app */,
 				B10000000000000000000003 /* JotWidgets.appex */,
+				D10000000000000000000003 /* JotTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -145,6 +167,29 @@
 			productReference = B10000000000000000000003 /* JotWidgets.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		D10000000000000000000010 /* JotTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D10000000000000000000020 /* Build configuration list for PBXNativeTarget "JotTests" */;
+			buildPhases = (
+				D10000000000000000000006 /* Sources */,
+				D10000000000000000000005 /* Frameworks */,
+				D10000000000000000000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D1000000000000000000000A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D10000000000000000000004 /* JotTests */,
+			);
+			name = JotTests;
+			packageProductDependencies = (
+			);
+			productName = JotTests;
+			productReference = D10000000000000000000003 /* JotTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -160,6 +205,10 @@
 					};
 					B10000000000000000000010 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					D10000000000000000000010 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = A10000000000000000000010;
 					};
 				};
 			};
@@ -179,6 +228,7 @@
 			targets = (
 				A10000000000000000000010 /* Jot */,
 				B10000000000000000000010 /* JotWidgets */,
+				D10000000000000000000010 /* JotTests */,
 			);
 		};
 /* End PBXProject section */
@@ -192,6 +242,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		B10000000000000000000007 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D10000000000000000000007 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -215,6 +272,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D10000000000000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -222,6 +286,11 @@
 			isa = PBXTargetDependency;
 			target = B10000000000000000000010 /* JotWidgets */;
 			targetProxy = B1000000000000000000000B /* PBXContainerItemProxy */;
+		};
+		D1000000000000000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000010 /* Jot */;
+			targetProxy = D1000000000000000000000B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -395,6 +464,42 @@
 			};
 			name = Release;
 		};
+		D10000000000000000000021 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 42BPRJUAHQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jamescronin.JotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Jot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Jot";
+			};
+			name = Debug;
+		};
+		D10000000000000000000022 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 42BPRJUAHQ;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jamescronin.JotTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Jot.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Jot";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -421,6 +526,15 @@
 			buildConfigurations = (
 				B10000000000000000000021 /* Debug */,
 				B10000000000000000000022 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D10000000000000000000020 /* Build configuration list for PBXNativeTarget "JotTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D10000000000000000000021 /* Debug */,
+				D10000000000000000000022 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
