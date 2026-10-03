@@ -27,3 +27,13 @@ Secrets.xcconfig
 *.p8
 *.p12
 *.mobileprovision
+
+# KiCad — backups, locks, and local state
+*-backups/
+*.kicad_prl
+*.lck
+\#auto_saved_files#
+_autosave-*
+fp-info-cache
+*.bak
+*-bak
