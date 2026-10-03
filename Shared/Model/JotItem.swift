@@ -56,6 +56,11 @@ final class JotItem {
     var isCompleted: Bool
     /// The original recording in `AudioStore`, if one was kept.
     var audioFileName: String?
+    /// The item this one follows up, if it's a follow-up (schema V2, ADR-004).
+    var parentID: UUID?
+    /// Kept as a note without being sorted (offline, sorting off, or it failed),
+    /// so it can be sorted later (schema V2, ADR-004).
+    var needsSorting: Bool = false
 
     init(
         kind: ItemKind,

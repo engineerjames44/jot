@@ -18,6 +18,7 @@ struct JotApp: App {
         _capture = State(initialValue: capture)
 
         UNUserNotificationCenter.current().delegate = notificationPresenter
+        UNUserNotificationCenter.current().setNotificationCategories([NotificationPresenter.reminderCategory])
 
         // The Action Button, Control Center, and Siri reach the pipeline through here.
         CaptureCommands.toggleRecording = {
@@ -27,15 +28,25 @@ struct JotApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(capture)
-                .environment(calendar)
-                .onOpenURL { url in
-                    // jot://record, from the widgets' record buttons.
-                    if url.scheme == "jot", url.host() == "record" {
-                        capture.toggleHandsFree(into: SharedStore.container.mainContext)
-                    }
+            Group {
+                if SharedStore.canWrite {
+                    RootView()
+                } else {
+                    StoreUnavailableView()
                 }
+            }
+            .environment(capture)
+            .environment(calendar)
+            .onOpenURL { url in
+                switch JotLink(url: url) {
+                case .record:
+                    capture.toggleHandsFree(into: SharedStore.container.mainContext)
+                case .item(let id):
+                    AppRouter.shared.itemToOpen = id
+                case nil:
+                    break
+                }
+            }
         }
         .modelContainer(SharedStore.container)
         .backgroundTask(.appRefresh(MorningBrief.taskIdentifier)) {

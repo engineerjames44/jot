@@ -118,7 +118,9 @@ private struct SmallUpcoming: View {
                 RecordOrb(size: 46)
             }
         }
-        .widgetURL(recordURL)
+        // One tap target in a small widget: open what's next, or record when
+        // there's nothing coming up.
+        .widgetURL(entry.reminders.first.map { JotLink.item($0.id).url } ?? recordURL)
         .containerBackground(for: .widget) { Color.jotBackground }
     }
 }
@@ -141,7 +143,9 @@ private struct MediumUpcoming: View {
                     Spacer()
                 } else {
                     ForEach(entry.reminders.prefix(3)) { reminder in
-                        ReminderLine(reminder: reminder)
+                        Link(destination: JotLink.item(reminder.id).url) {
+                            ReminderLine(reminder: reminder)
+                        }
                     }
                     Spacer(minLength: 0)
                 }

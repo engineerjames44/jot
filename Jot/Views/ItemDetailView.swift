@@ -6,15 +6,26 @@ struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.jotAnimation) private var animation
+    @Environment(CaptureController.self) private var capture
     @State private var playback = AudioPlayback()
     @State private var confirmingDelete = false
     @State private var isDeleted = false
+    @State private var isSorting = false
+    @State private var sortError: String?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
+                if let parentID = item.parentID {
+                    ParentLink(parentID: parentID)
+                }
+
                 kindPicker
                     .padding(.horizontal, -JotMetrics.gutter)
+
+                if item.needsSorting {
+                    NotSortedBanner(isSorting: isSorting) { sortAgain() }
+                }
 
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Title", text: $item.title, axis: .vertical)
@@ -42,43 +53,82 @@ struct ItemDetailView: View {
 
                 TranscriptQuote(transcript: item.transcript, createdAt: item.createdAt)
 
-                Button(role: .destructive) {
-                    confirmingDelete = true
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                        .font(.jotHeadline)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                FollowUps(parentID: item.id) {
+                    capture.startFollowUp(to: item, in: modelContext)
                 }
-                .buttonStyle(.pressable)
-                .padding(.top, 4)
             }
             .padding(.horizontal, JotMetrics.gutter)
             .padding(.top, 4)
             .padding(.bottom, 40)
             .animation(animation, value: item.kind)
             .animation(animation, value: item.dueDate == nil)
+            .animation(animation, value: item.needsSorting)
         }
         .scrollIndicators(.hidden)
         .scrollDismissesKeyboard(.interactively)
         .background(Color.jotBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Delete this item?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                isDeleted = true
-                playback.stop()
-                ItemActions.delete(item, in: modelContext)
-                dismiss()
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("Add follow-up", systemImage: "arrowshape.turn.up.right") {
+                        capture.startFollowUp(to: item, in: modelContext)
+                    }
+                    .disabled(capture.phase.isBusy)
+                    if !item.transcript.isEmpty {
+                        Button("Sort again", systemImage: "sparkles", action: sortAgain)
+                            .disabled(isSorting)
+                    }
+                    Divider()
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        confirmingDelete = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                }
+                .accessibilityLabel("More")
+                // Anchored to the menu button so iOS presents it from there.
+                .confirmationDialog("Delete this item?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                    Button("Delete", role: .destructive) {
+                        isDeleted = true
+                        playback.stop()
+                        dismiss()
+                        // Delete once the screen has gone: SwiftData can crash if a view
+                        // still bound to the item reads it after it's deleted.
+                        let item = item, context = modelContext
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(450))
+                            ItemActions.delete(item, in: context)
+                        }
+                    }
+                } message: {
+                    Text("You can undo this for a few seconds.")
+                }
             }
+        }
+        .alert("Couldn't sort it", isPresented: Binding(get: { sortError != nil }, set: { if !$0 { sortError = nil } })) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text("The recording is deleted too.")
+            Text(sortError ?? "")
         }
         .task { await playback.load(fileName: item.audioFileName) }
         .onDisappear {
             playback.stop()
             guard !isDeleted else { return }
             ItemActions.commit(modelContext)
+        }
+    }
+
+    private func sortAgain() {
+        guard !isSorting else { return }
+        isSorting = true
+        Task {
+            defer { isSorting = false }
+            do {
+                try await SortLater.sort(item, in: modelContext)
+            } catch {
+                sortError = error.localizedDescription
+            }
         }
     }
 

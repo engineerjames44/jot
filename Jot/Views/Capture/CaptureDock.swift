@@ -32,6 +32,9 @@ struct CaptureOrb: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
+    /// Resets on its own when the system cancels the touch (Notification
+    /// Center, a call, an alert), which `onEnded` never reports.
+    @GestureState private var isTouching = false
     @State private var spin = false
 
     static let orbSize: CGFloat = 78
@@ -93,16 +96,18 @@ struct CaptureOrb: View {
         .contentShape(.circle)
         .gesture(
             DragGesture(minimumDistance: 0)
+                .updating($isTouching) { _, touching, _ in touching = true }
                 .onChanged { _ in
                     guard !isPressed else { return }
                     isPressed = true
                     capture.beginCapture()
                 }
-                .onEnded { _ in
-                    isPressed = false
-                    capture.endCapture(into: modelContext)
-                }
+                .onEnded { _ in release() }
         )
+        .onChange(of: isTouching) { _, touching in
+            // Covers cancelled touches; after a normal release this is a no-op.
+            if !touching { release() }
+        }
         .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.3, dampingFraction: 0.6), value: level)
         .animation(.jot, value: recording)
         .animation(.jot, value: thinking)
@@ -119,6 +124,12 @@ struct CaptureOrb: View {
                 capture.beginCapture()
             }
         }
+    }
+
+    private func release() {
+        guard isPressed else { return }
+        isPressed = false
+        capture.endCapture(into: modelContext)
     }
 
     private func scale(recording: Bool, level: CGFloat) -> CGFloat {
@@ -348,6 +359,14 @@ private struct FailureCard: View {
                     .font(.jotBody)
                     .foregroundStyle(Color.jotTextPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if capture.failureNeedsSettings {
+                Button("Open Settings", systemImage: "gear") {
+                    openSystemSettings()
+                    capture.dismissConfirmation()
+                }
+                .buttonStyle(.jotSecondary)
+                .controlSize(.small)
             }
         }
         .onTapGesture { capture.dismissConfirmation() }

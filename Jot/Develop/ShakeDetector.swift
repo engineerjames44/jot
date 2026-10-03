@@ -1,3 +1,4 @@
+#if DEBUG
 import SwiftUI
 import UIKit
 
@@ -20,3 +21,4 @@ extension View {
         onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in action() }
     }
 }
+#endif

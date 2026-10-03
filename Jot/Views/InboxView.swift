@@ -4,15 +4,17 @@ import SwiftUI
 struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.jotAnimation) private var animation
+    @Environment(CaptureController.self) private var capture
     @Query(sort: \JotItem.createdAt, order: .reverse) private var items: [JotItem]
 
     @State private var searchText = ""
     @State private var kindFilter: ItemKind?
     @State private var openRow: UUID?
     @FocusState private var searchFocused: Bool
+    @State private var path: [JotItem] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
@@ -32,14 +34,24 @@ struct InboxView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: JotItem.self) { ItemDetailView(item: $0) }
         }
-        // On the stack, so the orb stays reachable on pushed screens too.
+        // Only at the root: on a detail screen the orb would cover its controls.
+        // It comes back while a capture is underway (e.g. from the Action Button).
         .safeAreaInset(edge: .bottom) {
-            if !searchFocused {
+            if !searchFocused && (path.isEmpty || capture.phase != .idle) {
                 CaptureDock()
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(animation, value: searchFocused)
+        .animation(animation, value: path.isEmpty)
+        .onChange(of: AppRouter.shared.itemToOpen, initial: true) { _, id in
+            guard let id else { return }
+            AppRouter.shared.itemToOpen = nil
+            if let item = items.first(where: { $0.id == id }) {
+                searchFocused = false
+                path = [item]
+            }
+        }
     }
 
     // MARK: Header & search
@@ -200,18 +212,19 @@ struct InboxView: View {
         var items: [JotItem]
     }
 
-    /// Items grouped by the day they were captured.
+    /// Items grouped by the day they were captured. Titles say "Captured" so
+    /// they aren't mistaken for when something is due.
     private var groupedResults: [Group] {
         let calendar = Calendar.current
         var groups: [Group] = []
         for item in filtered {
             let title: String
             if calendar.isDateInToday(item.createdAt) {
-                title = "Today"
+                title = "Captured today"
             } else if calendar.isDateInYesterday(item.createdAt) {
-                title = "Yesterday"
+                title = "Captured yesterday"
             } else {
-                title = item.createdAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+                title = "Captured " + item.createdAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
             }
             if groups.last?.title == title {
                 groups[groups.count - 1].items.append(item)
@@ -258,14 +271,14 @@ private struct InboxCard: View {
                 .foregroundStyle(item.isCompleted ? Color.jotTextSecondary : Color.jotTextPrimary)
                 .strikethrough(item.isCompleted, color: Color.jotTextSecondary)
                 .multilineTextAlignment(.leading)
-                .lineLimit(3)
+                .lineLimit(2)
 
             if !item.details.isEmpty {
                 Text(SearchHighlight.attributed(item.details, query: query))
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(query.isEmpty ? 1 : 2)
             }
 
             if let snippet = transcriptSnippet {
@@ -285,9 +298,9 @@ private struct InboxCard: View {
             }
         }
         .padding(.trailing, ItemActions.canComplete(item) ? 36 : 0)
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) {
-            Capsule().fill(item.kind.color).frame(width: 3).padding(.vertical, 18)
+            Capsule().fill(item.kind.color).frame(width: 3).padding(.vertical, 14)
         }
         .opacity(item.isCompleted ? 0.7 : 1)
     }

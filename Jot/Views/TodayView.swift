@@ -58,9 +58,10 @@ struct TodayView: View {
     @State private var completing: Set<UUID> = []
     @State private var completedCount = 0
     @State private var openRow: UUID?
+    @State private var path: [JotItem] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             TimelineView(.everyMinute) { context in
                 let content = buildContent(now: context.date)
                 ScrollViewReader { proxy in
@@ -107,8 +108,15 @@ struct TodayView: View {
             .refreshable { calendar.reload() }
             .sensoryFeedback(.success, trigger: completedCount)
         }
-        // On the stack, so the orb stays reachable on pushed screens too.
-        .safeAreaInset(edge: .bottom) { CaptureDock() }
+        // Only at the root: on a detail screen the orb would cover its controls.
+        // It comes back while a capture is underway (e.g. from the Action Button).
+        .safeAreaInset(edge: .bottom) {
+            if path.isEmpty || capture.phase != .idle {
+                CaptureDock()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(animation, value: path.isEmpty)
     }
 
     // MARK: Sections
@@ -460,9 +468,10 @@ private struct ItemCard: View {
             HStack(spacing: 8) {
                 KindLabel(kind: item.kind)
                 if isOverdue {
-                    Text("OVERDUE")
-                        .font(.jotLabel)
-                        .tracking(0.6)
+                    // Sentence case and small, so it reads as a note on the
+                    // time rather than a second label competing with the kind.
+                    Text("Overdue")
+                        .font(.jotTimeSmall)
                         .foregroundStyle(Color.jotAccent)
                 }
             }
@@ -471,14 +480,14 @@ private struct ItemCard: View {
                 .font(.jotBodyEmphasis)
                 .foregroundStyle(Color.jotTextPrimary)
                 .multilineTextAlignment(.leading)
-                .lineLimit(3)
+                .lineLimit(2)
 
             if !item.details.isEmpty {
                 Text(item.details)
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(1)
             }
 
             if let recurrence = item.recurrence {
@@ -488,7 +497,7 @@ private struct ItemCard: View {
             }
         }
         .padding(.trailing, reservesCheckSpace ? 36 : 0)
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) { KindEdge(color: item.kind.color) }
     }
 }
@@ -525,7 +534,7 @@ private struct CalendarEventCard: View {
             .font(.jotCaption)
             .foregroundStyle(Color.jotTextSecondary)
         }
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) { KindEdge(color: .jotEvent) }
         .accessibilityElement(children: .combine)
     }
@@ -558,7 +567,7 @@ private struct NoteCard: View {
                     .foregroundStyle(Color.jotTextSecondary)
             }
         }
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) { KindEdge(color: .jotNote) }
     }
 }

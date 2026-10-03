@@ -10,9 +10,22 @@ enum DemoCapture {
         UserDefaults.standard.bool(forKey: "JotDemoCapture")
     }
 
+    /// With `-JotDemoRealSorting YES`, the scripted words go to the real classifier.
+    static var usesRealSorting: Bool {
+        UserDefaults.standard.bool(forKey: "JotDemoRealSorting")
+    }
+
+    static let realSorting: CaptureController.Classify = { transcript in
+        try await Classifier.classify(transcript)
+    }
+
     @MainActor
     static func makeController() -> CaptureController {
-        CaptureController(source: DemoAudioSource(), transcribe: transcribe, classify: classify)
+        CaptureController(
+            source: DemoAudioSource(),
+            transcribe: transcribe,
+            classify: usesRealSorting ? realSorting : classify
+        )
     }
 
     /// Alternates between a reminder for Thursday and a task later today

@@ -9,15 +9,14 @@ final class OrbLocator {
 }
 
 /// Picks up from the static launch screen (the orb alone, centered): the orb
-/// pulses once, then shrinks and glides into the record button's position
-/// while the dark background fades away.
+/// shrinks and glides into the record button's position while the launch
+/// background fades away.
 struct LaunchHandoff: View {
     /// The record orb's frame in global coordinates, if it's on screen.
     let target: CGRect?
     var onFinish: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulsed = false
     @State private var landed = false
     @State private var fading = false
 
@@ -31,7 +30,7 @@ struct LaunchHandoff: View {
             // before the record orb reported its position.
             let destination = target.map { CGPoint(x: $0.midX, y: $0.midY) }
             let flies = landed && destination != nil
-            let scale = flies ? CaptureOrb.orbSize / launchSize : (pulsed ? 1.12 : 1)
+            let scale = flies ? CaptureOrb.orbSize / launchSize : 1
 
             ZStack {
                 Color.launchBackground
@@ -56,19 +55,14 @@ struct LaunchHandoff: View {
             return
         }
 
-        // One gentle pulse.
-        try? await Task.sleep(for: .milliseconds(120))
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.6)) { pulsed = true }
-        try? await Task.sleep(for: .milliseconds(240))
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) { pulsed = false }
-        try? await Task.sleep(for: .milliseconds(200))
-
-        // Glide into the record button (the real orb is underneath, identical);
-        // with nothing to land on, e.g. under onboarding, the orb just fades.
-        withAnimation(.spring(response: 0.55, dampingFraction: 0.82)) { landed = true }
-        try? await Task.sleep(for: .milliseconds(560))
-        withAnimation(.easeOut(duration: 0.2)) { fading = true }
-        try? await Task.sleep(for: .milliseconds(220))
+        // Straight into the record button (the real orb is underneath, identical):
+        // capture should be one press away, so keep this short. With nothing to
+        // land on, e.g. under onboarding, the orb just fades.
+        try? await Task.sleep(for: .milliseconds(60))
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.85)) { landed = true }
+        try? await Task.sleep(for: .milliseconds(380))
+        withAnimation(.easeOut(duration: 0.15)) { fading = true }
+        try? await Task.sleep(for: .milliseconds(160))
         onFinish()
     }
 }

@@ -6,7 +6,9 @@ struct SettingsView: View {
     @Environment(\.jotAnimation) private var animation
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("JotHasOnboarded") private var hasOnboarded = false
+    #if DEBUG
     @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
+    #endif
 
     @State private var permissions = PermissionCenter()
     @State private var keyInput = ""
@@ -25,7 +27,13 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
 
+                    #if DEBUG
+                    // Release builds sort through Jot's server; a personal key is
+                    // only for development.
                     section("Claude") { apiKeyCard }
+                    #endif
+
+                    section("Smart sorting") { SmartSortingCard() }
 
                     section("Morning brief") { MorningBriefCard() }
 
@@ -39,7 +47,9 @@ struct SettingsView: View {
                         }
                     }
 
+                    #if DEBUG
                     section("Developer") { developerCard }
+                    #endif
 
                     section("About") { aboutCard }
                 }
@@ -192,6 +202,7 @@ struct SettingsView: View {
 
     // MARK: Developer
 
+    #if DEBUG
     private var developerCard: some View {
         HStack(spacing: 12) {
             Image(systemName: "hammer.fill")
@@ -215,6 +226,7 @@ struct SettingsView: View {
         }
         .jotCard()
     }
+    #endif
 
     // MARK: About
 
@@ -260,7 +272,7 @@ struct SettingsView: View {
     }
 }
 
-private extension Bundle {
+extension Bundle {
     var appVersion: String {
         let version = infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "1"

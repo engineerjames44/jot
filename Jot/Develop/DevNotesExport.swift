@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 import UIKit
 
@@ -202,3 +203,4 @@ enum DevNotesExport {
         return result
     }
 }
+#endif

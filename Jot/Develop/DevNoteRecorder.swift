@@ -1,3 +1,4 @@
+#if DEBUG
 import Foundation
 import Observation
 import SwiftData
@@ -156,3 +157,4 @@ extension Bundle {
         return "\(version) (\(build))"
     }
 }
+#endif

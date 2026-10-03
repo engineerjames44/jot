@@ -25,16 +25,21 @@ struct JotThisIntent: AppIntent {
             return .result(dialog: "There was nothing to jot.")
         }
 
+        guard SharedStore.canWrite else {
+            return .result(dialog: "Jot can't open your notes right now, so nothing was saved. Open Jot for details.")
+        }
         let context = SharedStore.container.mainContext
         let dialog: IntentDialog
         do {
-            let result = try await ClaudeClassifier().classify(transcript: transcript)
+            let result = try await Classifier.classify(transcript)
             let item = CaptureController.insert(result, transcript: transcript, into: context)
             dialog = Self.confirmation(for: item)
         } catch {
             // Never lose it: keep the words as a note and say why.
             let fallback = ClassifiedItem(type: .note, title: String(transcript.prefix(60)), details: "")
-            CaptureController.insert(fallback, transcript: transcript, into: context)
+            let item = CaptureController.insert(fallback, transcript: transcript, into: context)
+            item.needsSorting = true
+            try? context.save()
             dialog = "Saved it as a note. \(error.localizedDescription)"
         }
 

@@ -22,9 +22,12 @@ struct RootView: View {
     @Namespace private var captureNamespace
     @State private var screen: Screen = .today
     @AppStorage("JotHasOnboarded") private var hasOnboarded = false
+    #if DEBUG
     @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
     @State private var quickNoteScreen: String?
+    #endif
     @State private var orbLocator = OrbLocator()
+    @AppStorage(SmartSorting.key) private var smartSortingAllowed = false
     @State private var showingLaunch = true
 
     var body: some View {
@@ -39,16 +42,23 @@ struct RootView: View {
                 InboxView()
                     .environment(\.isActiveTab, screen == .inbox)
             }
+            #if DEBUG
             if devModeEnabled {
                 Tab("Develop", systemImage: "hammer.fill", value: .develop) {
                     DevelopView()
                         .environment(\.isActiveTab, screen == .develop)
                 }
             }
+            #endif
             Tab("Settings", systemImage: "gearshape.fill", value: .settings) {
                 SettingsView()
                     .environment(\.isActiveTab, screen == .settings)
             }
+        }
+        .overlay(alignment: .bottom) {
+            // Above the tab bar and the record orb.
+            UndoToast()
+                .padding(.bottom, 150)
         }
         .environment(\.captureNamespace, captureNamespace)
         .environment(orbLocator)
@@ -71,6 +81,7 @@ struct RootView: View {
                     }
             }
         }
+        #if DEBUG
         .onShake {
             guard devModeEnabled, quickNoteScreen == nil, !capture.phase.isBusy else { return }
             quickNoteScreen = screen.name
@@ -84,8 +95,16 @@ struct RootView: View {
         .onChange(of: devModeEnabled) { _, enabled in
             if !enabled, screen == .develop { screen = .settings }
         }
+        #endif
         .fullScreenCover(isPresented: Binding(get: { !hasOnboarded }, set: { hasOnboarded = !$0 })) {
             OnboardingView { hasOnboarded = true }
+        }
+        .onChange(of: AppRouter.shared.itemToOpen) { _, id in
+            if id != nil { screen = .inbox }
+        }
+        .onChange(of: smartSortingAllowed) { _, allowed in
+            // Turning sorting on sorts what was kept as notes while it was off.
+            if allowed { Task { await SortLater.retryPending(in: modelContext) } }
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
@@ -96,23 +115,24 @@ struct RootView: View {
             // Launch and every return to the foreground: top the notification
             // queue back up to 64 and pick up calendar changes.
             calendar.reload()
-            Task { await ReminderScheduler.refill(using: modelContext) }
+            Task {
+                await ReminderScheduler.refill(using: modelContext)
+                await SortLater.retryPending(in: modelContext)
+            }
         }
     }
 }
 
+#if DEBUG
 private struct QuickNoteTarget: Identifiable {
     let screen: String
     var id: String { screen }
 }
 
-/// The Develop tab and shake-to-note: on by default in Debug builds,
-/// off in Release (TestFlight/App Store) until turned on in Settings.
+/// The Develop tab and shake-to-note. Debug builds only: they're tools for
+/// building Jot, not features, and shake-to-note would take over Shake to Undo.
 enum DevMode {
     static let enabledKey = "JotDevModeEnabled"
-    #if DEBUG
     static let defaultEnabled = true
-    #else
-    static let defaultEnabled = false
-    #endif
 }
+#endif
