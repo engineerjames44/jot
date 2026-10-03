@@ -27,7 +27,7 @@ enum AudioSourceError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .permissionDenied:
-            "Microphone access is off. Turn it on in Settings › Privacy › Microphone."
+            "Jot needs the microphone to hear you. Turn it on in Settings."
         case .unavailable(let reason):
             "Can't record right now: \(reason)"
         }

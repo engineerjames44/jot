@@ -360,6 +360,14 @@ private struct FailureCard: View {
                     .foregroundStyle(Color.jotTextPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            if capture.failureNeedsSettings {
+                Button("Open Settings", systemImage: "gear") {
+                    openSystemSettings()
+                    capture.dismissConfirmation()
+                }
+                .buttonStyle(.jotSecondary)
+                .controlSize(.small)
+            }
         }
         .onTapGesture { capture.dismissConfirmation() }
     }

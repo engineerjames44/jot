@@ -73,6 +73,8 @@ final class CaptureController {
     private(set) var confirmation: Confirmation?
     /// Set to present the editor for a just-captured item.
     var editingItem: JotItem?
+    /// The current failure can be fixed in the Settings app (microphone off).
+    private(set) var failureNeedsSettings = false
     /// While set, the next capture is saved as a follow-up to this item.
     private(set) var followUpParentID: UUID?
 
@@ -327,6 +329,7 @@ final class CaptureController {
     /// Removes the card; on Today it flies into its place in the timeline.
     func dismissConfirmation() {
         dismissTask?.cancel()
+        failureNeedsSettings = false
         guard confirmation != nil || phase == .saved || isFailed else { return }
         animate {
             confirmation = nil
@@ -451,6 +454,7 @@ final class CaptureController {
 
     private func fail(_ error: any Error) {
         stopWatchdog()
+        if case AudioSourceError.permissionDenied = error { failureNeedsSettings = true }
         if isRecording {
             source.stop()
             emit(.stop)
@@ -463,7 +467,8 @@ final class CaptureController {
         followUpParentID = nil
         animate { phase = .failed(message) }
         emit(.failure)
-        scheduleDismiss(after: 5)
+        // Long enough to reach the Settings button.
+        scheduleDismiss(after: failureNeedsSettings ? 10 : 5)
         liveActivity.failed(message)
     }
 
