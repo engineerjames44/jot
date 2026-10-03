@@ -31,7 +31,7 @@ struct JotThisIntent: AppIntent {
         let context = SharedStore.container.mainContext
         let dialog: IntentDialog
         do {
-            let result = try await ClaudeClassifier().classify(transcript: transcript)
+            let result = try await Classifier.classify(transcript)
             let item = CaptureController.insert(result, transcript: transcript, into: context)
             dialog = Self.confirmation(for: item)
         } catch {

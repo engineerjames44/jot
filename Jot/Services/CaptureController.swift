@@ -115,7 +115,7 @@ final class CaptureController {
             try await SpeechTranscription().transcribe(audio, onUpdate: onUpdate)
         },
         classify: @escaping Classify = { transcript in
-            try await ClaudeClassifier().classify(transcript: transcript)
+            try await Classifier.classify(transcript)
         }
     ) {
         self.source = source
