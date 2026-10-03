@@ -37,7 +37,9 @@ struct JotThisIntent: AppIntent {
         } catch {
             // Never lose it: keep the words as a note and say why.
             let fallback = ClassifiedItem(type: .note, title: String(transcript.prefix(60)), details: "")
-            CaptureController.insert(fallback, transcript: transcript, into: context)
+            let item = CaptureController.insert(fallback, transcript: transcript, into: context)
+            item.needsSorting = true
+            try? context.save()
             dialog = "Saved it as a note. \(error.localizedDescription)"
         }
 

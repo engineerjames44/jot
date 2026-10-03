@@ -73,6 +73,8 @@ final class CaptureController {
     private(set) var confirmation: Confirmation?
     /// Set to present the editor for a just-captured item.
     var editingItem: JotItem?
+    /// While set, the next capture is saved as a follow-up to this item.
+    private(set) var followUpParentID: UUID?
 
     /// Changes on every haptic moment; `feedback` says which one.
     private(set) var feedbackTick = 0
@@ -176,6 +178,14 @@ final class CaptureController {
         }
     }
 
+    /// Records a follow-up to `parent`, hands-free (the orb isn't on detail screens).
+    func startFollowUp(to parent: JotItem, in context: ModelContext) {
+        guard !phase.isBusy else { return }
+        followUpParentID = parent.id
+        toggleHandsFree(into: context)
+        if !phase.isBusy { followUpParentID = nil }
+    }
+
     /// Call when the orb is released. `context` receives the new item.
     func endCapture(into context: ModelContext) {
         isHeld = false
@@ -236,6 +246,9 @@ final class CaptureController {
                     // Never lose what was said: keep it as a plain note.
                     let fallback = ClassifiedItem(type: .note, title: String(transcript.prefix(60)), details: "")
                     let item = save(fallback, transcript: transcript, audioFile: audioFile, into: context)
+                    // Sorted later: on demand, or when Jot is back online with sorting on.
+                    item.needsSorting = true
+                    try? context.save()
                     showConfirmation(for: item, notice: "Saved as a note. \(error.localizedDescription)")
                 }
                 await ReminderScheduler.refill(using: context)
@@ -270,7 +283,8 @@ final class CaptureController {
         audioFile: String? = nil,
         into context: ModelContext
     ) -> JotItem {
-        Self.insert(result, transcript: transcript, audioFile: audioFile, into: context)
+        defer { followUpParentID = nil }
+        return Self.insert(result, transcript: transcript, audioFile: audioFile, parentID: followUpParentID, into: context)
     }
 
     /// Creates and saves an item from Claude's result. Also used by Siri.
@@ -279,6 +293,7 @@ final class CaptureController {
         _ result: ClassifiedItem,
         transcript: String,
         audioFile: String? = nil,
+        parentID: UUID? = nil,
         into context: ModelContext
     ) -> JotItem {
         let item = JotItem(
@@ -290,6 +305,7 @@ final class CaptureController {
             transcript: transcript
         )
         item.audioFileName = audioFile
+        item.parentID = parentID
         context.insert(item)
         try? context.save()
         WidgetCenter.shared.reloadAllTimelines()
@@ -444,6 +460,7 @@ final class CaptureController {
 
     private func fail(message: String) {
         isHandsFree = false
+        followUpParentID = nil
         animate { phase = .failed(message) }
         emit(.failure)
         scheduleDismiss(after: 5)

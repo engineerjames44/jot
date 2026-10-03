@@ -27,6 +27,7 @@ struct RootView: View {
     @State private var quickNoteScreen: String?
     #endif
     @State private var orbLocator = OrbLocator()
+    @AppStorage(SmartSorting.key) private var smartSortingAllowed = false
     @State private var showingLaunch = true
 
     var body: some View {
@@ -93,6 +94,10 @@ struct RootView: View {
         .fullScreenCover(isPresented: Binding(get: { !hasOnboarded }, set: { hasOnboarded = !$0 })) {
             OnboardingView { hasOnboarded = true }
         }
+        .onChange(of: smartSortingAllowed) { _, allowed in
+            // Turning sorting on sorts what was kept as notes while it was off.
+            if allowed { Task { await SortLater.retryPending(in: modelContext) } }
+        }
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
             #if DEBUG
@@ -102,7 +107,10 @@ struct RootView: View {
             // Launch and every return to the foreground: top the notification
             // queue back up to 64 and pick up calendar changes.
             calendar.reload()
-            Task { await ReminderScheduler.refill(using: modelContext) }
+            Task {
+                await ReminderScheduler.refill(using: modelContext)
+                await SortLater.retryPending(in: modelContext)
+            }
         }
     }
 }
