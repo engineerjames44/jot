@@ -1,2 +1,2 @@
-# Handoff → SDE (Phase 1A)
-Start with 1A.1 (dock on detail + Delete menu), per `decisions/senior-engineer/app-launch-readiness.md`. Build: `xcodebuild -project Jot.xcodeproj -scheme Jot -destination 'id=<sim>' build`. Run with `-JotSampleData YES` for realistic UI. Verify each task with simulator screenshots before moving on. ADR-001 must be followed for 1B.3.
+# Handoff → SDE (Phase 1B)
+1A is done (see `decisions/sde/app-launch-readiness.md`). Next: 1B reliability in order 1B.1 watchdog → 1B.2 keep audio → 1B.3 ADR-001 schema + store failure → 1B.4 coalesced refill → 1B.5 background task. Approach in `decisions/senior-engineer/app-launch-readiness.md`. Use `-JotDemoCapture YES` to exercise capture in the simulator.

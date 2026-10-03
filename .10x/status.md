@@ -1,7 +1,7 @@
 # Status — Jot
 
 **Feature:** app-launch-readiness · **Branch:** app-launch-readiness
-**Phase:** Planning Complete → Implementation (1A) starting
+**Phase:** Implementation — 1A done, 1B in progress
 **Updated:** 2026-10-03
 
 ## Phases
@@ -10,7 +10,7 @@
 - [x] Strategy (cto, product-manager)
 - [x] Design (architect, staff-engineer, ADR-001)
 - [x] Planning (engineering-manager, senior-engineer)
-- [ ] 1A UI polish
+- [x] 1A UI polish (tap latency: verify on device)
 - [ ] 1B Reliability
 - [ ] 2 Launch requirements (ADR-002 pending)
 - [ ] 3 UX gaps
