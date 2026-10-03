@@ -661,7 +661,7 @@
         "uuid": "61747270-9f90-47b6-9c50-5ea1f41f259a"
       }
     ],
-    "used_designators": "U1,R1-2,#PWR1-8,J1",
+    "used_designators": "J1,#PWR1-8,R1-2,U1",
     "variants": []
   },
   "sheets": [
@@ -672,6 +672,10 @@
     [
       "3460a3d2-b2cf-48b5-b384-7f5d6528594f",
       "Power"
+    ],
+    [
+      "12d7af8c-4dae-4738-915d-dcd3faf7f757",
+      "MCU"
     ]
   ],
   "text_variables": {},
