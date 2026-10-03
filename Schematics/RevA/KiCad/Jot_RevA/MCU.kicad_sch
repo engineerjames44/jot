@@ -4,6 +4,13 @@
 	(generator_version "10.0")
 	(uuid "b1ef41c8-1417-4f79-8d4b-fbab69c1157c")
 	(paper "A4")
+	(title_block
+		(title "Jot Rev A: MCU")
+		(date "2026-10-02")
+		(rev "A")
+		(company "James Donal Cronin")
+		(comment 1 "JOT-HW-001: handheld push-to-talk voice capture")
+	)
 	(lib_symbols
 		(symbol "Device:C"
 			(pin_numbers
@@ -2027,33 +2034,61 @@
 			(embedded_fonts no)
 		)
 	)
-	(junction
-		(at 139.7 27.94)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "5ea77650-d4a6-451e-9de0-519915ebc834")
-	)
-	(junction
-		(at 144.78 29.21)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "6089884a-f66d-4a86-b337-80838f72162f")
-	)
-	(junction
-		(at 139.7 36.83)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b55f9550-acf7-4afa-8bb8-b7b6d1681bca")
-	)
-	(junction
-		(at 144.78 31.75)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "c9a8b0b4-8690-47a0-8671-8677c80fd918")
-	)
 	(no_connect
-		(at 147.32 45.72)
+		(at 147.32 55.88)
 		(uuid "2f3f317a-7ce1-4d62-8c36-0b82877b673f")
+	)
+	(wire
+		(pts
+			(xy 144.78 31.75) (xy 151.13 31.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "072d3880-14b2-4a22-a42b-c2320ba67c11")
+	)
+	(wire
+		(pts
+			(xy 151.13 31.75) (xy 156.21 31.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3c1b0651-f03c-47d2-af4f-c62096a8c640")
+	)
+	(wire
+		(pts
+			(xy 156.21 31.75) (xy 160.02 31.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "45478fc8-6c08-4f7f-8482-16ab8fdd0e47")
+	)
+	(wire
+		(pts
+			(xy 167.64 31.75) (xy 170.18 31.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6725ebe5-5df8-4b55-9ba7-a08b14b154a0")
+	)
+	(junction
+		(at 151.13 31.75)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "452e648a-815e-488a-a9d1-b7880a6decbb")
+	)
+	(junction
+		(at 156.21 31.75)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8548c089-b192-47f0-b08c-e9b088541fec")
 	)
 	(wire
 		(pts
@@ -2067,7 +2102,7 @@
 	)
 	(wire
 		(pts
-			(xy 139.7 36.83) (xy 139.7 45.72)
+			(xy 139.7 36.83) (xy 139.7 55.88)
 		)
 		(stroke
 			(width 0)
@@ -2077,17 +2112,7 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 29.21) (xy 144.78 24.13)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "36ca8d29-92a3-4326-912e-40f2f18ae6f1")
-	)
-	(wire
-		(pts
-			(xy 144.78 45.72) (xy 144.78 31.75)
+			(xy 144.78 55.88) (xy 144.78 31.75)
 		)
 		(stroke
 			(width 0)
@@ -2097,7 +2122,7 @@
 	)
 	(wire
 		(pts
-			(xy 142.24 45.72) (xy 142.24 36.83)
+			(xy 142.24 55.88) (xy 142.24 36.83)
 		)
 		(stroke
 			(width 0)
@@ -2127,26 +2152,6 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 31.75) (xy 156.21 31.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "934ff63f-2b80-4120-8d2e-bd4409659cd2")
-	)
-	(wire
-		(pts
-			(xy 144.78 31.75) (xy 144.78 29.21)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "a01b20f6-d1db-4957-add4-d8cf125862f4")
-	)
-	(wire
-		(pts
 			(xy 139.7 27.94) (xy 139.7 36.83)
 		)
 		(stroke
@@ -2167,33 +2172,13 @@
 	)
 	(wire
 		(pts
-			(xy 142.24 137.16) (xy 142.24 142.24)
+			(xy 142.24 147.32) (xy 142.24 152.4)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "c6018e74-b4f8-40a1-a402-cb255b3d6655")
-	)
-	(wire
-		(pts
-			(xy 156.21 24.13) (xy 160.02 24.13)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d3eabfb2-6f94-47a3-96d4-298d362409de")
-	)
-	(wire
-		(pts
-			(xy 144.78 24.13) (xy 148.59 24.13)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "e3574a4c-3d26-458e-8657-9b5dfb49eb62")
 	)
 	(wire
 		(pts
@@ -2377,7 +2362,7 @@
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
-		(at 144.78 29.21 0)
+		(at 151.13 31.75 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2388,7 +2373,7 @@
 		(fields_autoplaced yes)
 		(uuid "9f3531df-2cfb-4e99-bd1b-24ea35cf11e7")
 		(property "Reference" "#FLG03"
-			(at 144.78 27.305 0)
+			(at 151.13 29.845 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2399,7 +2384,7 @@
 			)
 		)
 		(property "Value" "PWR_FLAG"
-			(at 144.78 24.13 0)
+			(at 151.13 26.67 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2409,7 +2394,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 144.78 29.21 0)
+			(at 151.13 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2420,7 +2405,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 144.78 29.21 0)
+			(at 151.13 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2431,7 +2416,7 @@
 			)
 		)
 		(property "Description" "Special symbol for telling ERC where power comes from"
-			(at 144.78 29.21 0)
+			(at 151.13 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2455,7 +2440,7 @@
 	)
 	(symbol
 		(lib_id "power:GND")
-		(at 142.24 142.24 0)
+		(at 142.24 152.4 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2466,7 +2451,7 @@
 		(fields_autoplaced yes)
 		(uuid "b34bf2f2-6d7d-4828-b177-b9c3a58993c2")
 		(property "Reference" "#PWR01"
-			(at 142.24 148.59 0)
+			(at 142.24 158.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2477,7 +2462,7 @@
 			)
 		)
 		(property "Value" "GND"
-			(at 142.24 147.32 0)
+			(at 142.24 157.48 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2487,7 +2472,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 142.24 142.24 0)
+			(at 142.24 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2498,7 +2483,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 142.24 142.24 0)
+			(at 142.24 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2509,7 +2494,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 142.24 142.24 0)
+			(at 142.24 152.4 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2533,7 +2518,7 @@
 	)
 	(symbol
 		(lib_id "RF_Module:MDBT50Q-1MV2")
-		(at 142.24 91.44 0)
+		(at 142.24 101.6 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2544,7 +2529,7 @@
 		(fields_autoplaced yes)
 		(uuid "c5b3e286-7946-4589-9b91-f681be6d4d52")
 		(property "Reference" "U1"
-			(at 144.3833 137.16 0)
+			(at 144.3833 147.32 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2555,7 +2540,7 @@
 			)
 		)
 		(property "Value" "MDBT50Q-1MV2"
-			(at 144.3833 139.7 0)
+			(at 144.3833 149.86 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2566,7 +2551,7 @@
 			)
 		)
 		(property "Footprint" "RF_Module:Raytac_MDBT50Q"
-			(at 142.24 96.52 0)
+			(at 142.24 106.68 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2577,7 +2562,7 @@
 			)
 		)
 		(property "Datasheet" "https://www.raytac.com/download/index.php?index_id=43"
-			(at 142.24 96.52 0)
+			(at 142.24 106.68 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2588,7 +2573,7 @@
 			)
 		)
 		(property "Description" "Multiprotocol BLE/ANT/2.4 GHz/802.15.4 Cortex-M4F SoC, nRF52840 module"
-			(at 142.24 91.44 0)
+			(at 142.24 101.6 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2952,7 +2937,7 @@
 	)
 	(symbol
 		(lib_id "power:VBUS")
-		(at 160.02 24.13 0)
+		(at 170.18 31.75 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -2963,7 +2948,7 @@
 		(fields_autoplaced yes)
 		(uuid "f736160d-de52-4d68-939c-211e9fda6c0b")
 		(property "Reference" "#PWR027"
-			(at 160.02 27.94 0)
+			(at 170.18 35.56 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2974,7 +2959,7 @@
 			)
 		)
 		(property "Value" "VBUS"
-			(at 160.02 19.05 0)
+			(at 170.18 26.67 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -2984,7 +2969,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 160.02 24.13 0)
+			(at 170.18 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2995,7 +2980,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 160.02 24.13 0)
+			(at 170.18 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3006,7 +2991,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"VBUS\""
-			(at 160.02 24.13 0)
+			(at 170.18 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3030,7 +3015,7 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 152.4 24.13 270)
+		(at 163.83 31.75 270)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3041,7 +3026,7 @@
 		(fields_autoplaced yes)
 		(uuid "fa9e32a8-a1e4-4da2-98ea-fee4ac6cb576")
 		(property "Reference" "R14"
-			(at 152.4 17.78 90)
+			(at 163.83 25.4 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3051,7 +3036,7 @@
 			)
 		)
 		(property "Value" "2.2"
-			(at 152.4 20.32 90)
+			(at 163.83 27.94 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3061,7 +3046,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 152.4 22.352 90)
+			(at 163.83 29.972 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3072,7 +3057,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 152.4 24.13 0)
+			(at 163.83 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3083,7 +3068,7 @@
 			)
 		)
 		(property "Description" "Resistor"
-			(at 152.4 24.13 0)
+			(at 163.83 31.75 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

@@ -8,7 +8,8 @@
 		(title "Jot Rev A: Power")
 		(date "2026-10-02")
 		(rev "A")
-		(company "JC")
+		(company "James Donal Cronin")
+		(comment 1 "JOT-HW-001: handheld push-to-talk voice capture")
 	)
 	(lib_symbols
 		(symbol "Connector:USB_C_Receptacle_USB2.0_16P"
