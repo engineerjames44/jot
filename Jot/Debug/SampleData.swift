@@ -46,6 +46,15 @@ enum SampleData {
                     transcript: "remind me on Saturday at ten to renew my passport"),
         ]
         items.forEach(context.insert)
+
+        // Follow-ups to dinner, so the detail screen shows them.
+        if let dinner = items.first(where: { $0.title == "Dinner with Sam" }) {
+            items.first { $0.title.hasPrefix("Sam recommended") }?.parentID = dinner.id
+            let photos = JotItem(kind: .reminder, title: "Send Sam the trip photos", dueDate: at(10, dayOffset: 1),
+                                 transcript: "remind me to send Sam the trip photos tomorrow morning")
+            photos.parentID = dinner.id
+            context.insert(photos)
+        }
         try? context.save()
     }
 
