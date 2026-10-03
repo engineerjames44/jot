@@ -468,9 +468,10 @@ private struct ItemCard: View {
             HStack(spacing: 8) {
                 KindLabel(kind: item.kind)
                 if isOverdue {
-                    Text("OVERDUE")
-                        .font(.jotLabel)
-                        .tracking(0.6)
+                    // Sentence case and small, so it reads as a note on the
+                    // time rather than a second label competing with the kind.
+                    Text("Overdue")
+                        .font(.jotTimeSmall)
                         .foregroundStyle(Color.jotAccent)
                 }
             }
@@ -479,14 +480,14 @@ private struct ItemCard: View {
                 .font(.jotBodyEmphasis)
                 .foregroundStyle(Color.jotTextPrimary)
                 .multilineTextAlignment(.leading)
-                .lineLimit(3)
+                .lineLimit(2)
 
             if !item.details.isEmpty {
                 Text(item.details)
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(1)
             }
 
             if let recurrence = item.recurrence {
@@ -496,7 +497,7 @@ private struct ItemCard: View {
             }
         }
         .padding(.trailing, reservesCheckSpace ? 36 : 0)
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) { KindEdge(color: item.kind.color) }
     }
 }
@@ -533,7 +534,7 @@ private struct CalendarEventCard: View {
             .font(.jotCaption)
             .foregroundStyle(Color.jotTextSecondary)
         }
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) { KindEdge(color: .jotEvent) }
         .accessibilityElement(children: .combine)
     }
@@ -566,7 +567,7 @@ private struct NoteCard: View {
                     .foregroundStyle(Color.jotTextSecondary)
             }
         }
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) { KindEdge(color: .jotNote) }
     }
 }

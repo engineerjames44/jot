@@ -204,18 +204,19 @@ struct InboxView: View {
         var items: [JotItem]
     }
 
-    /// Items grouped by the day they were captured.
+    /// Items grouped by the day they were captured. Titles say "Captured" so
+    /// they aren't mistaken for when something is due.
     private var groupedResults: [Group] {
         let calendar = Calendar.current
         var groups: [Group] = []
         for item in filtered {
             let title: String
             if calendar.isDateInToday(item.createdAt) {
-                title = "Today"
+                title = "Captured today"
             } else if calendar.isDateInYesterday(item.createdAt) {
-                title = "Yesterday"
+                title = "Captured yesterday"
             } else {
-                title = item.createdAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+                title = "Captured " + item.createdAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
             }
             if groups.last?.title == title {
                 groups[groups.count - 1].items.append(item)
@@ -262,14 +263,14 @@ private struct InboxCard: View {
                 .foregroundStyle(item.isCompleted ? Color.jotTextSecondary : Color.jotTextPrimary)
                 .strikethrough(item.isCompleted, color: Color.jotTextSecondary)
                 .multilineTextAlignment(.leading)
-                .lineLimit(3)
+                .lineLimit(2)
 
             if !item.details.isEmpty {
                 Text(SearchHighlight.attributed(item.details, query: query))
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(query.isEmpty ? 1 : 2)
             }
 
             if let snippet = transcriptSnippet {
@@ -289,9 +290,9 @@ private struct InboxCard: View {
             }
         }
         .padding(.trailing, ItemActions.canComplete(item) ? 36 : 0)
-        .jotCard()
+        .jotRow()
         .overlay(alignment: .leading) {
-            Capsule().fill(item.kind.color).frame(width: 3).padding(.vertical, 18)
+            Capsule().fill(item.kind.color).frame(width: 3).padding(.vertical, 14)
         }
         .opacity(item.isCompleted ? 0.7 : 1)
     }

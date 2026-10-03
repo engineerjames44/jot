@@ -39,6 +39,8 @@ enum JotMetrics {
     static let cornerRadius: CGFloat = 20
     static let gutter: CGFloat = 20
     static let cardPadding: CGFloat = 16
+    /// List rows: tighter top and bottom than a card, so more fits on screen.
+    static let rowInsets = EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
 }
 
 extension Animation {
@@ -56,13 +58,16 @@ extension EnvironmentValues {
 // MARK: - Card
 
 struct JotCard: ViewModifier {
-    var padding: CGFloat = JotMetrics.cardPadding
+    var insets = EdgeInsets(
+        top: JotMetrics.cardPadding, leading: JotMetrics.cardPadding,
+        bottom: JotMetrics.cardPadding, trailing: JotMetrics.cardPadding
+    )
     var fill: Color = .jotSurface
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: JotMetrics.cornerRadius, style: .continuous)
         content
-            .padding(padding)
+            .padding(insets)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(fill, in: shape)
             .overlay(shape.strokeBorder(Color.jotBorder, lineWidth: 1))
@@ -72,7 +77,12 @@ struct JotCard: ViewModifier {
 
 extension View {
     func jotCard(padding: CGFloat = JotMetrics.cardPadding, fill: Color = .jotSurface) -> some View {
-        modifier(JotCard(padding: padding, fill: fill))
+        modifier(JotCard(insets: EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding), fill: fill))
+    }
+
+    /// A card sized for lists.
+    func jotRow(fill: Color = .jotSurface) -> some View {
+        modifier(JotCard(insets: JotMetrics.rowInsets, fill: fill))
     }
 }
 

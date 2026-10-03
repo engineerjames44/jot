@@ -112,10 +112,16 @@ private struct IntroPage<Illustration: View>: View {
                     .font(.jotDisplay)
                     .tracking(-0.8)
                     .foregroundStyle(Color.jotTextPrimary)
-                Text(message)
-                    .font(.system(.title3))
-                    .foregroundStyle(Color.jotTextSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                // Every page reserves at least three lines (the hidden text), so
+                // the heading doesn't jump between pages but can still grow
+                // with larger text sizes.
+                ZStack(alignment: .topLeading) {
+                    Text("\n\n").hidden()
+                    Text(message)
+                        .foregroundStyle(Color.jotTextSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.system(.title3))
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
@@ -297,17 +303,27 @@ private struct SpeakIllustration: View {
                 }
                 .frame(height: 80)
 
-                Text(words.prefix(min(shown, words.count)).joined(separator: " "))
+                Text(sentence(showing: shown))
                     .font(.system(.title, design: .rounded, weight: .semibold))
                     .foregroundStyle(Color.jotTextPrimary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .frame(height: 80, alignment: .top)
-                    .contentTransition(.opacity)
-                    .animation(.jot, value: shown)
             }
             .padding(.horizontal, 24)
         }
+    }
+
+    /// The whole sentence is always laid out, with unspoken words hidden, so
+    /// words appear in place instead of the line re-centering as it grows.
+    private func sentence(showing shown: Int) -> AttributedString {
+        var result = AttributedString()
+        for (index, word) in words.enumerated() {
+            var part = AttributedString(index == 0 ? word : " " + word)
+            if index >= shown { part.foregroundColor = .clear }
+            result += part
+        }
+        return result
     }
 }
 
