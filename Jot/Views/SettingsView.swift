@@ -43,6 +43,8 @@ struct SettingsView: View {
 
                     section("Morning brief") { MorningBriefCard() }
 
+                    section("Evening check-in") { EveningNudgeCard() }
+
                     section("Permissions") {
                         VStack(spacing: 10) {
                             ForEach(PermissionCenter.Kind.allCases) { kind in
@@ -495,5 +497,41 @@ private struct AppearanceCard: View {
         }
         .jotCard()
         .sensoryFeedback(.selection, trigger: appearance)
+    }
+}
+
+/// The 8 PM nudge about what's still open, with Move to tomorrow on it.
+private struct EveningNudgeCard: View {
+    @Environment(\.modelContext) private var modelContext
+    @AppStorage(EveningNudge.Keys.enabled) private var isEnabled = true
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "moon.stars.fill")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.jotNote)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Evening check-in")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                Text("At 8:00 PM, if anything's still open, with a button to move it to tomorrow")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Toggle("Evening check-in", isOn: $isEnabled)
+                .labelsHidden()
+                .tint(Color.jotAccentText)
+        }
+        .jotCard()
+        .onChange(of: isEnabled) { _, on in
+            Task {
+                if on { _ = await ReminderScheduler.ensureAuthorized() }
+                await ReminderScheduler.refill(using: modelContext)
+            }
+        }
     }
 }

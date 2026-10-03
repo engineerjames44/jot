@@ -69,7 +69,8 @@ enum ReminderScheduler {
             }
             .sorted { $0.1 < $1.1 }
 
-        let briefs = MorningBrief.requests(using: context, now: now)
+        // Briefs and evening nudges get their slots first; reminders fill the rest.
+        let briefs = MorningBrief.requests(using: context, now: now) + EveningNudge.requests(using: context, now: now)
         let upcoming = reminders.prefix(pendingLimit - briefs.count).map { item, fireDate in
             Pending(
                 id: item.id.uuidString,
@@ -189,6 +190,15 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate, S
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        // The evening nudge isn't about one item.
+        if response.notification.request.content.categoryIdentifier == EveningNudge.categoryID {
+            guard response.actionIdentifier == EveningNudge.moveAction else { return }
+            await MainActor.run {
+                guard SharedStore.canWrite else { return }
+                EveningNudge.moveStillOpenToTomorrow(in: SharedStore.container.mainContext)
+            }
+            return
+        }
         guard let raw = response.notification.request.content.userInfo["itemID"] as? String,
               let id = UUID(uuidString: raw)
         else { return }

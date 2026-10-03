@@ -77,7 +77,7 @@ struct OnboardingView: View {
                         turn(to: page + 1)
                     } else {
                         // The brief needs notifications; ask now, while the choice is fresh.
-                        if MorningBrief.isEnabled { Task { _ = await ReminderScheduler.ensureAuthorized() } }
+                        if MorningBrief.isEnabled || EveningNudge.isEnabled { Task { _ = await ReminderScheduler.ensureAuthorized() } }
                         onFinish()
                     }
                 } label: {
@@ -263,9 +263,11 @@ private struct PermissionsPage: View {
     }
 }
 
-/// The morning brief, on by default: it's the reason to open Jot each day.
+/// The morning brief and evening check-in, on by default: the reasons to open
+/// Jot each day. One switch here; separate ones in Settings.
 private struct BriefRow: View {
     @AppStorage(MorningBrief.Keys.enabled) private var isEnabled = false
+    @AppStorage(EveningNudge.Keys.enabled) private var nudgeEnabled = true
 
     var body: some View {
         HStack(spacing: 14) {
@@ -275,20 +277,21 @@ private struct BriefRow: View {
                 .frame(width: 44, height: 44)
                 .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                Text("Morning brief")
+                Text("Morning and evening")
                     .font(.jotHeadline)
                     .foregroundStyle(Color.jotTextPrimary)
-                Text("Your day in one notification at 8:00 AM. Change the time in Settings.")
+                Text("Your day at 8:00 AM, and at 8:00 PM anything still open. Change these in Settings.")
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
-            Toggle("Morning brief", isOn: $isEnabled)
+            Toggle("Morning brief and evening check-in", isOn: $isEnabled)
                 .labelsHidden()
                 .tint(Color.jotAccentText)
         }
         .jotCard()
+        .onChange(of: isEnabled) { _, on in nudgeEnabled = on }
         .onAppear {
             // On unless the person has already decided.
             if UserDefaults.standard.object(forKey: MorningBrief.Keys.enabled) == nil { isEnabled = true }

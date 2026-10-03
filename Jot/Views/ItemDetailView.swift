@@ -12,6 +12,10 @@ struct ItemDetailView: View {
     @State private var isDeleted = false
     @State private var isSorting = false
     @State private var sortError: String?
+    @State private var showingEventEditor = false
+    /// "Added to Calendar" once it's been sent there this visit.
+    @State private var exported: String?
+    @State private var exportError: String?
 
     var body: some View {
         ScrollView {
@@ -42,6 +46,8 @@ struct ItemDetailView: View {
                     whenCard
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
+
+                exportButton
 
                 if ItemActions.canComplete(item) {
                     completeButton
@@ -79,6 +85,12 @@ struct ItemDetailView: View {
                         Button("Sort again", systemImage: "sparkles", action: sortAgain)
                             .disabled(isSorting)
                     }
+                    if CalendarExport.canAddToCalendar(item) {
+                        Button("Add to Calendar", systemImage: "calendar.badge.plus") { showingEventEditor = true }
+                    }
+                    if CalendarExport.canAddToReminders(item) {
+                        Button("Add to Reminders", systemImage: "checklist", action: addToReminders)
+                    }
                     Divider()
                     Button("Delete", systemImage: "trash", role: .destructive) {
                         confirmingDelete = true
@@ -111,11 +123,59 @@ struct ItemDetailView: View {
         } message: {
             Text(sortError ?? "")
         }
+        .sheet(isPresented: $showingEventEditor) {
+            EventEditor(item: item) { saved in
+                showingEventEditor = false
+                if saved { withAnimation(animation) { exported = "Added to Calendar" } }
+            }
+            .ignoresSafeArea()
+        }
+        .alert("Couldn't add it", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
+        .sensoryFeedback(.success, trigger: exported) { _, new in new != nil }
         .task { await playback.load(fileName: item.audioFileName) }
         .onDisappear {
             playback.stop()
             guard !isDeleted else { return }
             ItemActions.commit(modelContext)
+        }
+    }
+
+    /// Calendar for events with a time; Reminders for reminders and tasks.
+    @ViewBuilder
+    private var exportButton: some View {
+        if let exported {
+            Label(exported, systemImage: "checkmark.circle.fill")
+                .font(.jotHeadline)
+                .foregroundStyle(Color.jotTask)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .transition(.opacity)
+        } else if CalendarExport.canAddToCalendar(item) {
+            Button { showingEventEditor = true } label: {
+                Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.jotSecondary)
+        } else if CalendarExport.canAddToReminders(item) {
+            Button(action: addToReminders) {
+                Label("Add to Reminders", systemImage: "checklist")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.jotSecondary)
+        }
+    }
+
+    private func addToReminders() {
+        Task {
+            do {
+                try await CalendarExport.addToReminders(item)
+                withAnimation(animation) { exported = "Added to Reminders" }
+            } catch {
+                exportError = error.localizedDescription
+            }
         }
     }
 
