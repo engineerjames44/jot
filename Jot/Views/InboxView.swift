@@ -44,6 +44,14 @@ struct InboxView: View {
         }
         .animation(animation, value: searchFocused)
         .animation(animation, value: path.isEmpty)
+        .onChange(of: AppRouter.shared.itemToOpen, initial: true) { _, id in
+            guard let id else { return }
+            AppRouter.shared.itemToOpen = nil
+            if let item = items.first(where: { $0.id == id }) {
+                searchFocused = false
+                path = [item]
+            }
+        }
     }
 
     // MARK: Header & search

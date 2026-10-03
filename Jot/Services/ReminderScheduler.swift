@@ -89,6 +89,7 @@ enum ReminderScheduler {
             content.body = reminder.body
             content.sound = .default
             content.userInfo = ["itemID": reminder.id]
+            content.categoryIdentifier = NotificationPresenter.reminderCategoryID
 
             let request = UNNotificationRequest(
                 identifier: reminder.id,
@@ -141,12 +142,55 @@ enum ReminderScheduler {
     }
 }
 
-/// Shows reminder banners even while Jot is open.
+/// Shows reminder banners even while Jot is open, and handles taps and the
+/// Done and Snooze buttons on them.
 final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate, Sendable {
+    static let doneAction = "jot.done"
+    static let snoozeAction = "jot.snooze"
+    static let reminderCategoryID = "jot.reminder"
+
+    /// Built on demand: `UNNotificationCategory` isn't Sendable, so it can't be a stored static.
+    static var reminderCategory: UNNotificationCategory {
+        UNNotificationCategory(
+            identifier: reminderCategoryID,
+            actions: [
+                UNNotificationAction(identifier: doneAction, title: "Done", options: [],
+                                     icon: UNNotificationActionIcon(systemImageName: "checkmark")),
+                UNNotificationAction(identifier: snoozeAction, title: "Snooze 1 hour", options: [],
+                                     icon: UNNotificationActionIcon(systemImageName: "clock")),
+            ],
+            intentIdentifiers: []
+        )
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
         [.banner, .list, .sound]
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        guard let raw = response.notification.request.content.userInfo["itemID"] as? String,
+              let id = UUID(uuidString: raw)
+        else { return }
+        let action = response.actionIdentifier
+        await MainActor.run {
+            let context = SharedStore.container.mainContext
+            guard SharedStore.canWrite,
+                  let item = try? context.fetch(FetchDescriptor<JotItem>(predicate: #Predicate { $0.id == id })).first
+            else { return }
+            switch action {
+            case Self.doneAction:
+                if !item.isCompleted { ItemActions.toggleComplete(item, in: context) }
+            case Self.snoozeAction:
+                ItemActions.snooze(item, .oneHour, in: context)
+            default:
+                AppRouter.shared.itemToOpen = id
+            }
+        }
     }
 }

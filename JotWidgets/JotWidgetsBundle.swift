@@ -12,4 +12,4 @@ struct JotWidgetsBundle: WidgetBundle {
 }
 
 /// Opens Jot and starts a hands-free recording.
-let recordURL = URL(string: "jot://record")!
+let recordURL = JotLink.record.url
