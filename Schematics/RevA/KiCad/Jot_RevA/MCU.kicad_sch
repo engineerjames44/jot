@@ -2283,6 +2283,16 @@
 	)
 	(wire
 		(pts
+			(xy 121.92 101.6) (xy 91.44 101.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18391d43-f8d5-4653-a5b9-4d1e7eb8f102")
+	)
+	(wire
+		(pts
 			(xy 200.66 73.66) (xy 204.47 73.66)
 		)
 		(stroke
@@ -2343,6 +2353,16 @@
 	)
 	(wire
 		(pts
+			(xy 121.92 104.14) (xy 91.44 104.14)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "45f68469-140d-45dd-ad09-cfdfda282b18")
+	)
+	(wire
+		(pts
 			(xy 142.24 55.88) (xy 142.24 36.83)
 		)
 		(stroke
@@ -2350,6 +2370,16 @@
 			(type default)
 		)
 		(uuid "4fa148b4-567b-4fb5-8243-0153d7a5e449")
+	)
+	(wire
+		(pts
+			(xy 91.44 104.14) (xy 91.44 106.68)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "54f8cbed-7180-4e4d-8f25-b00bf0671d7c")
 	)
 	(wire
 		(pts
@@ -2463,6 +2493,16 @@
 	)
 	(wire
 		(pts
+			(xy 91.44 101.6) (xy 91.44 99.06)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c4b4d70b-d584-4e57-a3d2-d5db41763146")
+	)
+	(wire
+		(pts
 			(xy 142.24 147.32) (xy 142.24 152.4)
 		)
 		(stroke
@@ -2500,6 +2540,54 @@
 			(type default)
 		)
 		(uuid "fcee2d53-b26b-4c0e-a113-0f2020a2e491")
+	)
+	(global_label "USB_DP"
+		(shape bidirectional)
+		(at 91.44 106.68 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "1f3a9533-767f-4ca5-96a5-e921a29d14eb")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 80.0259 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+	(global_label "USB_DM"
+		(shape bidirectional)
+		(at 91.44 99.06 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "9e8b3a26-85c7-4bfa-b603-3771b19ea904")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 79.8445 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
 	)
 	(symbol
 		(lib_id "power:GND")
