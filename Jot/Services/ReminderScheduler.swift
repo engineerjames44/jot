@@ -46,14 +46,19 @@ enum ReminderScheduler {
         let body: String
         let fireDate: Date
         let recurrence: Recurrence?
+        let isEvent: Bool
     }
 
     private static func performRefill(using context: ModelContext, now: Date) async {
         let center = UNUserNotificationCenter.current()
 
+        // Events alert at their start time too; before, they never alerted at all.
         let reminderKind = ItemKind.reminder.rawValue
+        let eventKind = ItemKind.event.rawValue
         let descriptor = FetchDescriptor<JotItem>(
-            predicate: #Predicate { $0.kindRaw == reminderKind && !$0.isCompleted && $0.dueDate != nil }
+            predicate: #Predicate {
+                ($0.kindRaw == reminderKind || $0.kindRaw == eventKind) && !$0.isCompleted && $0.dueDate != nil
+            }
         )
         let open = (try? context.fetch(descriptor)) ?? []
 
@@ -66,7 +71,14 @@ enum ReminderScheduler {
 
         let briefs = MorningBrief.requests(using: context, now: now)
         let upcoming = reminders.prefix(pendingLimit - briefs.count).map { item, fireDate in
-            Pending(id: item.id.uuidString, title: item.title, body: item.details, fireDate: fireDate, recurrence: item.recurrence)
+            Pending(
+                id: item.id.uuidString,
+                title: item.title,
+                body: item.details,
+                fireDate: fireDate,
+                recurrence: item.recurrence,
+                isEvent: item.kind == .event
+            )
         }
 
         // Everything except a brief preview the user just asked for.
@@ -89,7 +101,10 @@ enum ReminderScheduler {
             content.body = reminder.body
             content.sound = .default
             content.userInfo = ["itemID": reminder.id]
-            content.categoryIdentifier = NotificationPresenter.reminderCategoryID
+            // Done and Snooze make sense for reminders; an event just opens.
+            if !reminder.isEvent {
+                content.categoryIdentifier = NotificationPresenter.reminderCategoryID
+            }
 
             let request = UNNotificationRequest(
                 identifier: reminder.id,
