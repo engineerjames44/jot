@@ -30,6 +30,7 @@ struct RootView: View {
     @AppStorage(SmartSorting.key) private var smartSortingAllowed = false
     @State private var showingLaunch = true
     @State private var showingSettings = false
+    @AppStorage(Appearance.key) private var appearance = Appearance.system
 
     var body: some View {
         @Bindable var capture = capture
@@ -53,7 +54,9 @@ struct RootView: View {
         .environment(\.openSettings) { showingSettings = true }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
+                .preferredColorScheme(appearance.colorScheme)
         }
+        .preferredColorScheme(appearance.colorScheme)
         .overlay(alignment: .bottom) {
             // Above the tab bar and the record orb.
             UndoToast()

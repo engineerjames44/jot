@@ -24,7 +24,7 @@ struct OnDeviceClassifier: Sendable {
         var type: Kind
         @Guide(description: "A short, clear title under 60 characters. Imperative for tasks and reminders.")
         var title: String
-        @Guide(description: "Any other useful information from the memo that isn't in the title, or an empty string.")
+        @Guide(description: "Any other useful information from the memo that isn't in the title, or an empty string. Never repeat the time or date here.")
         var details: String
         @Guide(description: "When it's due or happens, exactly as said. The app works out the date.")
         var when: When

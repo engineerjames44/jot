@@ -15,18 +15,26 @@ struct InboxView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    header
-                    searchField
-                        .padding(.horizontal, JotMetrics.gutter)
-                    ChipPicker(options: chipOptions, selection: $kindFilter)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        header
+                        searchField
+                            .padding(.horizontal, JotMetrics.gutter)
+                        ChipPicker(options: chipOptions, selection: $kindFilter)
 
-                    results
-                        .padding(.horizontal, JotMetrics.gutter)
+                        if !items.isEmpty {
+                            WeekStrip(days: stripDays) { day in
+                                withAnimation(animation) { proxy.scrollTo(Self.sectionID(for: day), anchor: .top) }
+                            }
+                        }
+
+                        results
+                            .padding(.horizontal, JotMetrics.gutter)
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 24)
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 24)
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.immediately)
@@ -126,7 +134,7 @@ struct InboxView: View {
 
     @ViewBuilder
     private var results: some View {
-        let groups = groupedResults
+        let groups = agenda
         if items.isEmpty {
             EmptyStateView(
                 symbol: "tray.full.fill",
@@ -146,12 +154,13 @@ struct InboxView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(groups.enumerated()), id: \.element.title) { groupIndex, group in
-                    SectionHeader(title: group.title, trailing: "\(group.items.count)")
+                ForEach(Array(groups.enumerated()), id: \.element.id) { groupIndex, group in
+                    SectionHeader(title: group.title, trailing: "\(group.entries.count)")
                         .padding(.top, groupIndex == 0 ? 4 : 24)
                         .padding(.bottom, 4)
-                    ForEach(group.items, id: \.id) { item in
-                        row(for: item)
+                        .id(group.id)
+                    ForEach(group.entries, id: \.item.id) { entry in
+                        row(for: entry.item, at: entry.date, dated: group.isDated)
                             .transition(.asymmetric(
                                 insertion: .opacity,
                                 removal: .opacity.combined(with: .scale(scale: 0.95))
@@ -163,7 +172,7 @@ struct InboxView: View {
         }
     }
 
-    private func row(for item: JotItem) -> some View {
+    private func row(for item: JotItem, at date: Date?, dated: Bool) -> some View {
         SwipeableRow(
             item: item,
             openRow: $openRow,
@@ -172,7 +181,7 @@ struct InboxView: View {
             onDelete: { withAnimation(animation) { ItemActions.delete(item, in: modelContext) } }
         ) {
             NavigationLink(value: item) {
-                InboxCard(item: item, query: searchText)
+                InboxCard(item: item, query: searchText, date: date, showsTime: dated)
             }
             .buttonStyle(.pressable)
             .overlay(alignment: .trailing) {
@@ -207,32 +216,151 @@ struct InboxView: View {
         }
     }
 
-    private struct Group {
+    // MARK: Agenda
+
+    /// A section of the agenda: overdue, one day, no date, or done.
+    private struct Section {
+        let id: String
         let title: String
-        var items: [JotItem]
+        /// Day sections show a time column; the others don't.
+        let isDated: Bool
+        var entries: [(item: JotItem, date: Date?)]
     }
 
-    /// Items grouped by the day they were captured. Titles say "Captured" so
-    /// they aren't mistaken for when something is due.
-    private var groupedResults: [Group] {
+    static func sectionID(for day: Date) -> String {
+        "day-" + day.formatted(.iso8601.year().month().day())
+    }
+
+    /// When an item next happens: its due date, or a repeating item's next occurrence.
+    private func when(_ item: JotItem, today: Date) -> Date? {
+        guard item.kind != .note else { return nil }
+        return item.recurrence == nil ? item.dueDate : item.nextOccurrence(onOrAfter: today)
+    }
+
+    /// Everything in calendar order: what's overdue, then each day with something
+    /// on it, then things with no date, then what's done.
+    private var agenda: [Section] {
         let calendar = Calendar.current
-        var groups: [Group] = []
+        let now = Date.now
+        let today = calendar.startOfDay(for: now)
+
+        var overdue: [(JotItem, Date?)] = []
+        var days: [Date: [(JotItem, Date?)]] = [:]
+        var undated: [(JotItem, Date?)] = []
+        var done: [(JotItem, Date?)] = []
+
         for item in filtered {
-            let title: String
-            if calendar.isDateInToday(item.createdAt) {
-                title = "Captured today"
-            } else if calendar.isDateInYesterday(item.createdAt) {
-                title = "Captured yesterday"
+            let date = when(item, today: today)
+            if item.isCompleted {
+                done.append((item, date))
+            } else if let date {
+                if date < now, ItemActions.canComplete(item) {
+                    overdue.append((item, date))
+                } else {
+                    // Events stay on their day, even once they've passed.
+                    days[calendar.startOfDay(for: date), default: []].append((item, date))
+                }
             } else {
-                title = "Captured " + item.createdAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
-            }
-            if groups.last?.title == title {
-                groups[groups.count - 1].items.append(item)
-            } else {
-                groups.append(Group(title: title, items: [item]))
+                undated.append((item, nil))
             }
         }
-        return groups
+
+        var sections: [Section] = []
+        if !overdue.isEmpty {
+            sections.append(Section(id: "overdue", title: "Overdue", isDated: true,
+                                    entries: overdue.sorted { ($0.1 ?? now) < ($1.1 ?? now) }))
+        }
+        for (day, dayEntries) in days.sorted(by: { $0.key < $1.key }) {
+            let entries = dayEntries.sorted { ($0.1 ?? day) < ($1.1 ?? day) }
+            sections.append(Section(id: Self.sectionID(for: day), title: Self.dayTitle(day), isDated: true, entries: entries))
+        }
+        if !undated.isEmpty {
+            sections.append(Section(id: "undated", title: "No date", isDated: false, entries: undated))
+        }
+        if !done.isEmpty {
+            sections.append(Section(id: "done", title: "Done", isDated: false, entries: done))
+        }
+        return sections
+    }
+
+    /// "Today", "Tomorrow", "Monday 5 October".
+    static func dayTitle(_ day: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return "Today" }
+        if calendar.isDateInTomorrow(day) { return "Tomorrow" }
+        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.wide))
+    }
+
+    /// The next two weeks, each with the kinds of what's on it.
+    private var stripDays: [WeekStrip.Day] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        var kinds: [Date: [ItemKind]] = [:]
+        for item in filtered where !item.isCompleted {
+            guard let date = when(item, today: today), date >= today else { continue }
+            kinds[calendar.startOfDay(for: date), default: []].append(item.kind)
+        }
+        return (0..<14).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: today).map { WeekStrip.Day(date: $0, kinds: kinds[$0] ?? []) }
+        }
+    }
+}
+
+// MARK: - Week strip
+
+/// Two weeks across the top, each day dotted with what's on it. Tapping a day
+/// jumps the agenda to it.
+private struct WeekStrip: View {
+    struct Day: Identifiable {
+        let date: Date
+        let kinds: [ItemKind]
+        var id: Date { date }
+    }
+
+    let days: [Day]
+    var onSelect: (Date) -> Void
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                ForEach(days) { day in
+                    cell(day)
+                }
+            }
+            .padding(.horizontal, JotMetrics.gutter)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func cell(_ day: Day) -> some View {
+        let isToday = Calendar.current.isDateInToday(day.date)
+        let hasItems = !day.kinds.isEmpty
+        return Button {
+            onSelect(day.date)
+        } label: {
+            VStack(spacing: 6) {
+                Text(day.date.formatted(.dateTime.weekday(.abbreviated)))
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isToday ? Color.jotBackground.opacity(0.75) : Color.jotTextSecondary)
+                Text(day.date.formatted(.dateTime.day()))
+                    .font(.system(size: 19, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(isToday ? Color.jotBackground : Color.jotTextPrimary)
+                HStack(spacing: 3) {
+                    // One dot per kind on the day, in a fixed order.
+                    ForEach([ItemKind.event, .reminder, .task].filter(day.kinds.contains), id: \.self) { kind in
+                        Circle().fill(kind.color).frame(width: 5, height: 5)
+                    }
+                }
+                .frame(height: 5)
+            }
+            .frame(width: 46, height: 72)
+            .background(isToday ? Color.jotTextPrimary : Color.jotSurface, in: .rect(cornerRadius: 14, style: .continuous))
+            .opacity(hasItems || isToday ? 1 : 0.55)
+        }
+        .buttonStyle(.pressable)
+        .disabled(!hasItems)
+        .accessibilityLabel("\(day.date.formatted(.dateTime.weekday(.wide).day().month(.wide))), \(day.kinds.count) items")
     }
 }
 
@@ -242,9 +370,21 @@ struct InboxView: View {
 private struct InboxCard: View {
     let item: JotItem
     let query: String
+    /// When it happens; shown in the time column in day sections.
+    var date: Date?
+    var showsTime = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 12) {
+            if showsTime {
+                Text(timeLabel)
+                    .font(.jotReadout)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .frame(width: 64, alignment: .trailing)
+                    .padding(.top, 3)
+            }
             KindNode(kind: item.kind)
                 .padding(.top, 4)
 
@@ -301,9 +441,23 @@ private struct InboxCard: View {
         .opacity(item.isCompleted ? 0.7 : 1)
     }
 
-    /// "Reminder, tomorrow 10:00 AM" or "Task, overdue since Thu 2:00 PM".
+    /// In day sections the time column says when; elsewhere it's "Thu" or "Oct 14".
+    private var timeLabel: String {
+        guard let date else { return "" }
+        if Calendar.current.isDateInToday(date) || !isOverdue {
+            return date.formatted(date: .omitted, time: .shortened)
+        }
+        return Calendar.current.isDateInYesterday(date) ? "Yesterday" : date.formatted(.dateTime.weekday(.abbreviated).day())
+    }
+
+    /// "Reminder, tomorrow 10:00 AM" or "Task, overdue since Thu 2:00 PM". In day
+    /// sections the date is already in the header and time column.
     private var meta: String {
         var text = item.kind.label
+        if showsTime {
+            // The node already shows the kind; details say more when there are any.
+            return !item.details.isEmpty && query.isEmpty ? item.details : text
+        }
         if let due = item.dueDate, item.kind != .note {
             // Mid-sentence: "tomorrow 10:00 AM", but weekdays and months keep their capital.
             let short = JotDate.short(due)

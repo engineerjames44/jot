@@ -31,6 +31,8 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     section("You") { NameCard() }
 
+                    section("Appearance") { AppearanceCard() }
+
                     #if DEBUG
                     // Release builds sort through Jot's server; a personal key is
                     // only for development.
@@ -442,5 +444,52 @@ private struct NameCard: View {
         .onChange(of: focused) { _, isFocused in
             if !isFocused { name = UserProfile.cleaned(name) }
         }
+    }
+}
+
+/// Light, dark, or whatever the iPhone is set to.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+    static let key = "JotAppearance"
+
+    var id: String { rawValue }
+    var label: String { self == .system ? "Automatic" : rawValue.capitalized }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
+private struct AppearanceCard: View {
+    @AppStorage(Appearance.key) private var appearance = Appearance.system
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 14) {
+                Image(systemName: appearance == .dark ? "moon.fill" : appearance == .light ? "sun.max.fill" : "circle.lefthalf.filled")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.jotTextPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+                    .contentTransition(.symbolEffect(.replace))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Appearance")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Text(appearance == .system ? "Follows your iPhone's setting" : "Always \(appearance.rawValue)")
+                        .font(.jotCaption)
+                        .foregroundStyle(Color.jotTextSecondary)
+                }
+            }
+            Picker("Appearance", selection: $appearance) {
+                ForEach(Appearance.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+        }
+        .jotCard()
+        .sensoryFeedback(.selection, trigger: appearance)
     }
 }
