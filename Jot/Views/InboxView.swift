@@ -34,6 +34,7 @@ struct InboxView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: JotItem.self) { ItemDetailView(item: $0) }
         }
+        .overlay { CaptureStage() }
         // Only at the root: on a detail screen the orb would cover its controls.
         // It comes back while a capture is underway (e.g. from the Action Button).
         .safeAreaInset(edge: .bottom) {
@@ -58,24 +59,21 @@ struct InboxView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("EVERYTHING YOU'VE CAPTURED")
-                .font(.jotLabel)
-                .tracking(1.2)
-                .foregroundStyle(Color.jotAccent)
-            HStack(alignment: .firstTextBaseline) {
-                Text("Inbox")
-                    .font(.jotDisplay)
-                    .tracking(-0.8)
-                    .foregroundStyle(Color.jotTextPrimary)
-                Spacer()
-                Text("\(items.count)")
-                    .font(.system(.title2, design: .rounded, weight: .bold).monospacedDigit())
+            HStack(alignment: .center) {
+                Text("Everything you've said")
+                    .font(.jotSection)
                     .foregroundStyle(Color.jotTextSecondary)
-                    .contentTransition(.numericText(value: Double(items.count)))
+                Spacer()
+                ProfileBadge()
             }
+            Text("Inbox")
+                .font(.jotDisplay)
+                .tracking(-0.8)
+                .foregroundStyle(Color.jotTextPrimary)
+                .accessibilityAddTraits(.isHeader)
         }
         .padding(.horizontal, JotMetrics.gutter)
-        .padding(.top, 12)
+        .padding(.top, 4)
     }
 
     private var searchField: some View {
@@ -147,13 +145,13 @@ struct InboxView: View {
                     : "Nothing mentions “\(searchText)”."
             )
         } else {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(groups.enumerated()), id: \.element.title) { groupIndex, group in
                     SectionHeader(title: group.title, trailing: "\(group.items.count)")
-                        .padding(.top, groupIndex == 0 ? 4 : 14)
-                    ForEach(Array(group.items.enumerated()), id: \.element.id) { index, item in
+                        .padding(.top, groupIndex == 0 ? 4 : 24)
+                        .padding(.bottom, 4)
+                    ForEach(group.items, id: \.id) { item in
                         row(for: item)
-                            .staggeredAppear(index)
                             .transition(.asymmetric(
                                 insertion: .opacity,
                                 removal: .opacity.combined(with: .scale(scale: 0.95))
@@ -177,19 +175,21 @@ struct InboxView: View {
                 InboxCard(item: item, query: searchText)
             }
             .buttonStyle(.pressable)
-            .overlay(alignment: .topTrailing) {
+            .overlay(alignment: .trailing) {
                 if ItemActions.canComplete(item) {
                     Button {
                         withAnimation(animation) { ItemActions.toggleComplete(item, in: modelContext) }
                     } label: {
                         CheckCircle(isChecked: item.isCompleted, color: item.kind.color)
-                            .padding(JotMetrics.cardPadding)
+                            .padding(.vertical, 12)
+                            .padding(.leading, 12)
                             .contentShape(.rect)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(item.isCompleted ? "Reopen \(item.title)" : "Complete \(item.title)")
                 }
             }
+            .background(Color.jotBackground)
         }
         .sensoryFeedback(.success, trigger: item.isCompleted) { _, done in done }
     }
@@ -236,73 +236,84 @@ struct InboxView: View {
     }
 }
 
-// MARK: - Card
+// MARK: - Row
 
+/// One captured item as a line: the kind's node, the words, and when it's due.
 private struct InboxCard: View {
     let item: JotItem
     let query: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                KindLabel(kind: item.kind)
-                if let due = item.dueDate, item.kind != .note {
-                    Text("·").foregroundStyle(Color.jotTextSecondary)
-                    Text(JotDate.short(due))
-                        .font(.jotTimeSmall)
-                        .foregroundStyle(isOverdue ? Color.jotAccent : Color.jotTextSecondary)
-                        .lineLimit(1)
-                }
-                if item.recurrence != nil {
-                    Image(systemName: "arrow.trianglehead.2.clockwise")
-                        .font(.jotLabel)
-                        .foregroundStyle(Color.jotTextSecondary)
-                }
-                if item.audioFileName != nil {
-                    Image(systemName: "waveform")
-                        .font(.jotLabel)
-                        .foregroundStyle(Color.jotTextSecondary)
-                        .accessibilityLabel("Has recording")
-                }
-            }
+        HStack(alignment: .top, spacing: 14) {
+            KindNode(kind: item.kind)
+                .padding(.top, 4)
 
-            Text(SearchHighlight.attributed(item.title, query: query))
-                .font(.jotBodyEmphasis)
-                .foregroundStyle(item.isCompleted ? Color.jotTextSecondary : Color.jotTextPrimary)
-                .strikethrough(item.isCompleted, color: Color.jotTextSecondary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
-
-            if !item.details.isEmpty {
-                Text(SearchHighlight.attributed(item.details, query: query))
-                    .font(.jotCaption)
-                    .foregroundStyle(Color.jotTextSecondary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(SearchHighlight.attributed(item.title, query: query))
+                    .font(.jotBodyEmphasis)
+                    .foregroundStyle(item.isCompleted ? Color.jotTextSecondary : Color.jotTextPrimary)
+                    .strikethrough(item.isCompleted, color: Color.jotTextSecondary)
                     .multilineTextAlignment(.leading)
-                    .lineLimit(query.isEmpty ? 1 : 2)
-            }
+                    .lineLimit(2)
 
-            if let snippet = transcriptSnippet {
-                HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 10, weight: .heavy))
-                        .foregroundStyle(Color.jotNote)
-                        .padding(.top, 3)
-                    Text(SearchHighlight.attributed(snippet, query: query))
+                HStack(spacing: 5) {
+                    Text(meta)
+                        .lineLimit(1)
+                    if item.recurrence != nil {
+                        Image(systemName: "arrow.trianglehead.2.clockwise")
+                            .accessibilityLabel("Repeats")
+                    }
+                    if item.audioFileName != nil {
+                        Image(systemName: "waveform")
+                            .accessibilityLabel("Has recording")
+                    }
+                }
+                .font(.jotCaption)
+                .foregroundStyle(Color.jotTextSecondary)
+
+                if !item.details.isEmpty, !query.isEmpty {
+                    Text(SearchHighlight.attributed(item.details, query: query))
+                        .font(.jotCaption)
+                        .foregroundStyle(Color.jotTextSecondary)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(2)
+                }
+
+                if let snippet = transcriptSnippet {
+                    Text(SearchHighlight.attributed("“\(snippet)”", query: query))
                         .font(.jotCaption)
                         .italic()
                         .foregroundStyle(Color.jotTextSecondary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(2)
+                        .padding(.top, 2)
                 }
-                .padding(.top, 2)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.trailing, ItemActions.canComplete(item) ? 36 : 0)
-        .jotRow()
-        .overlay(alignment: .leading) {
-            Capsule().fill(item.kind.color).frame(width: 3).padding(.vertical, 14)
+        .padding(.vertical, 12)
+        .padding(.leading, 4)
+        .padding(.trailing, ItemActions.canComplete(item) ? 44 : 0)
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Color.jotTextSecondary.opacity(0.15)).frame(height: 0.5).padding(.leading, 32)
         }
+        .contentShape(.rect)
         .opacity(item.isCompleted ? 0.7 : 1)
+    }
+
+    /// "Reminder, tomorrow 10:00 AM" or "Task, overdue since Thu 2:00 PM".
+    private var meta: String {
+        var text = item.kind.label
+        if let due = item.dueDate, item.kind != .note {
+            // Mid-sentence: "tomorrow 10:00 AM", but weekdays and months keep their capital.
+            let short = JotDate.short(due)
+            let relative = ["Today", "Tomorrow", "Yesterday"].contains { short.hasPrefix($0) }
+            let when = relative ? short.prefix(1).lowercased() + short.dropFirst() : short
+            text += isOverdue ? ", overdue since \(when)" : ", \(when)"
+        } else if !item.details.isEmpty, query.isEmpty {
+            text += ", \(item.details)"
+        }
+        return text
     }
 
     private var isOverdue: Bool {

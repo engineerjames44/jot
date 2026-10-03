@@ -31,6 +31,10 @@ extension Font {
     /// Times and counts: rounded with fixed-width digits so columns don't jitter.
     static let jotTime = Font.system(.subheadline, design: .rounded, weight: .semibold).monospacedDigit()
     static let jotTimeSmall = Font.system(.caption, design: .rounded, weight: .semibold).monospacedDigit()
+    /// The timeline's time column: a device-style readout, so times line up.
+    static let jotReadout = Font.system(.footnote, design: .monospaced, weight: .medium)
+    /// Section titles: sentence case, quiet, no tracking.
+    static let jotSection = Font.system(.subheadline, weight: .semibold)
 }
 
 // MARK: - Metrics & motion
@@ -153,20 +157,44 @@ struct KindDot: View {
     }
 }
 
-/// "● Reminder" style label in the type's color.
+/// "● Reminder": the dot carries the type's color, the word stays quiet.
 struct KindLabel: View {
     let kind: ItemKind
 
     var body: some View {
         HStack(spacing: 5) {
             KindDot(color: kind.color, size: 6)
-            Text(kind.label.uppercased())
-                .font(.jotLabel)
-                .tracking(0.6)
-                .foregroundStyle(kind.color)
+            Text(kind.label)
+                .font(.jotTimeSmall)
+                .foregroundStyle(Color.jotTextSecondary)
                 .lineLimit(1)
         }
         .fixedSize()
+    }
+}
+
+/// The kind as a shape on the rail: event filled, reminder a ring, task a square, note a bar.
+struct KindNode: View {
+    let kind: ItemKind
+
+    var body: some View {
+        Group {
+            switch kind {
+            case .event:
+                Circle().fill(kind.color).frame(width: 11, height: 11)
+            case .reminder:
+                Circle().strokeBorder(kind.color, lineWidth: 2.5).frame(width: 12, height: 12)
+            case .task:
+                RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                    .strokeBorder(kind.color, lineWidth: 2.5)
+                    .frame(width: 11, height: 11)
+            case .note:
+                Capsule().fill(kind.color).frame(width: 4, height: 13)
+            }
+        }
+        .frame(width: 14, height: 14)
+        .background(Color.jotBackground, in: .circle)
+        .accessibilityHidden(true)
     }
 }
 
@@ -176,9 +204,8 @@ struct SectionHeader: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title.uppercased())
-                .font(.jotLabel)
-                .tracking(1.2)
+            Text(title)
+                .font(.jotSection)
                 .foregroundStyle(Color.jotTextSecondary)
             Spacer()
             if let trailing {

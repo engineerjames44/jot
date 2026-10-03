@@ -29,31 +29,30 @@ struct RootView: View {
     @State private var orbLocator = OrbLocator()
     @AppStorage(SmartSorting.key) private var smartSortingAllowed = false
     @State private var showingLaunch = true
+    @State private var showingSettings = false
 
     var body: some View {
         @Bindable var capture = capture
 
+        // The system tab bar is hidden: each screen draws the bottom bar, with
+        // the record orb between Today and Inbox. Settings opens from your initial.
         TabView(selection: $screen) {
             Tab("Today", systemImage: "sun.max.fill", value: .today) {
                 TodayView()
                     .environment(\.isActiveTab, screen == .today)
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab("Inbox", systemImage: "tray.full.fill", value: .inbox) {
                 InboxView()
                     .environment(\.isActiveTab, screen == .inbox)
+                    .toolbar(.hidden, for: .tabBar)
             }
-            #if DEBUG
-            if devModeEnabled {
-                Tab("Develop", systemImage: "hammer.fill", value: .develop) {
-                    DevelopView()
-                        .environment(\.isActiveTab, screen == .develop)
-                }
-            }
-            #endif
-            Tab("Settings", systemImage: "gearshape.fill", value: .settings) {
-                SettingsView()
-                    .environment(\.isActiveTab, screen == .settings)
-            }
+        }
+        .environment(\.currentScreen, screen)
+        .environment(\.selectScreen) { selected in screen = selected }
+        .environment(\.openSettings) { showingSettings = true }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
         .overlay(alignment: .bottom) {
             // Above the tab bar and the record orb.
@@ -92,9 +91,6 @@ struct RootView: View {
         )) { target in
             QuickDevNoteSheet(screen: target.screen)
         }
-        .onChange(of: devModeEnabled) { _, enabled in
-            if !enabled, screen == .develop { screen = .settings }
-        }
         #endif
         .fullScreenCover(isPresented: Binding(get: { !hasOnboarded }, set: { hasOnboarded = !$0 })) {
             OnboardingView { hasOnboarded = true }
@@ -111,8 +107,7 @@ struct RootView: View {
             // -JotStartTab inbox|settings|develop: open a tab directly, for screenshots.
             switch UserDefaults.standard.string(forKey: "JotStartTab") {
             case "inbox": screen = .inbox
-            case "settings": screen = .settings
-            case "develop": screen = .develop
+            case "settings": showingSettings = true
             default: break
             }
         }

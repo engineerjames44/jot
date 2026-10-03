@@ -10,6 +10,10 @@ struct SettingsView: View {
     @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
     #endif
 
+    @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    @State private var showingDevelop = false
+    #endif
     @State private var permissions = PermissionCenter()
     @State private var keyInput = ""
     @State private var savedKeySuffix: String?
@@ -25,8 +29,6 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    header
-
                     section("You") { NameCard() }
 
                     #if DEBUG
@@ -62,7 +64,15 @@ struct SettingsView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .background(Color.jotBackground.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            #if DEBUG
+            .sheet(isPresented: $showingDevelop) { DevelopView() }
+            #endif
             .onAppear(perform: loadKey)
             .task { await permissions.refresh() }
             .onChange(of: scenePhase) { _, phase in
@@ -70,19 +80,6 @@ struct SettingsView: View {
                 if phase == .active { Task { await permissions.refresh() } }
             }
         }
-    }
-
-    // MARK: Header
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Wordmark(size: 56)
-            Text("Hold. Speak. Done.")
-                .font(.jotHeadline)
-                .foregroundStyle(Color.jotTextSecondary)
-        }
-        .padding(.top, 20)
-        .accessibilityElement(children: .combine)
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -213,20 +210,28 @@ struct SettingsView: View {
                 .frame(width: 44, height: 44)
                 .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text("Develop tab")
+                Text("Develop tools")
                     .font(.jotHeadline)
                     .foregroundStyle(Color.jotTextPrimary)
-                Text("Record change notes about Jot and export them. Shake anywhere to add one.")
+                Text("Record change notes about Jot and export them. Shake anywhere to add one.\n")
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
-            Toggle("Develop tab", isOn: $devModeEnabled)
+            Toggle("Develop tools", isOn: $devModeEnabled)
                 .labelsHidden()
                 .tint(Color.jotAccent)
         }
         .jotCard()
+        .overlay(alignment: .bottomTrailing) {
+            if devModeEnabled {
+                Button("Open") { showingDevelop = true }
+                    .buttonStyle(.jotSecondary)
+                    .controlSize(.small)
+                    .padding(12)
+            }
+        }
     }
     #endif
 
