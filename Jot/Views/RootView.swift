@@ -22,8 +22,10 @@ struct RootView: View {
     @Namespace private var captureNamespace
     @State private var screen: Screen = .today
     @AppStorage("JotHasOnboarded") private var hasOnboarded = false
+    #if DEBUG
     @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
     @State private var quickNoteScreen: String?
+    #endif
     @State private var orbLocator = OrbLocator()
     @State private var showingLaunch = true
 
@@ -39,12 +41,14 @@ struct RootView: View {
                 InboxView()
                     .environment(\.isActiveTab, screen == .inbox)
             }
+            #if DEBUG
             if devModeEnabled {
                 Tab("Develop", systemImage: "hammer.fill", value: .develop) {
                     DevelopView()
                         .environment(\.isActiveTab, screen == .develop)
                 }
             }
+            #endif
             Tab("Settings", systemImage: "gearshape.fill", value: .settings) {
                 SettingsView()
                     .environment(\.isActiveTab, screen == .settings)
@@ -71,6 +75,7 @@ struct RootView: View {
                     }
             }
         }
+        #if DEBUG
         .onShake {
             guard devModeEnabled, quickNoteScreen == nil, !capture.phase.isBusy else { return }
             quickNoteScreen = screen.name
@@ -84,6 +89,7 @@ struct RootView: View {
         .onChange(of: devModeEnabled) { _, enabled in
             if !enabled, screen == .develop { screen = .settings }
         }
+        #endif
         .fullScreenCover(isPresented: Binding(get: { !hasOnboarded }, set: { hasOnboarded = !$0 })) {
             OnboardingView { hasOnboarded = true }
         }
@@ -101,18 +107,16 @@ struct RootView: View {
     }
 }
 
+#if DEBUG
 private struct QuickNoteTarget: Identifiable {
     let screen: String
     var id: String { screen }
 }
 
-/// The Develop tab and shake-to-note: on by default in Debug builds,
-/// off in Release (TestFlight/App Store) until turned on in Settings.
+/// The Develop tab and shake-to-note. Debug builds only: they're tools for
+/// building Jot, not features, and shake-to-note would take over Shake to Undo.
 enum DevMode {
     static let enabledKey = "JotDevModeEnabled"
-    #if DEBUG
     static let defaultEnabled = true
-    #else
-    static let defaultEnabled = false
-    #endif
 }
+#endif
