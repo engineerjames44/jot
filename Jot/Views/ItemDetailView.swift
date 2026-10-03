@@ -182,9 +182,8 @@ struct ItemDetailView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("REPEAT")
-                        .font(.jotLabel)
-                        .tracking(1.2)
+                    Text("Repeat")
+                        .font(.jotSection)
                         .foregroundStyle(Color.jotTextSecondary)
                     ChipPicker(
                         options: [.init(value: Recurrence?.none, label: "Never")]
@@ -314,9 +313,8 @@ private struct TranscriptQuote: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("WHAT YOU SAID")
-                .font(.jotLabel)
-                .tracking(1.2)
+            Text("What you said")
+                .font(.jotSection)
                 .foregroundStyle(Color.jotTextSecondary)
 
             HStack(alignment: .top, spacing: 14) {

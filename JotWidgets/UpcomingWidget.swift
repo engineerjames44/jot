@@ -92,10 +92,9 @@ private struct SmallUpcoming: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("UP NEXT")
-                .font(.jotLabel)
-                .tracking(1)
-                .foregroundStyle(Color.jotAccent)
+            Text("Up next")
+                .font(.jotSection)
+                .foregroundStyle(Color.jotTextSecondary)
             if let next = entry.reminders.first {
                 Text(next.title)
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
@@ -131,10 +130,9 @@ private struct MediumUpcoming: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("UP NEXT")
-                    .font(.jotLabel)
-                    .tracking(1)
-                    .foregroundStyle(Color.jotAccent)
+                Text("Up next")
+                    .font(.jotSection)
+                    .foregroundStyle(Color.jotTextSecondary)
                 if entry.reminders.isEmpty {
                     Spacer()
                     Text("No reminders coming up.")

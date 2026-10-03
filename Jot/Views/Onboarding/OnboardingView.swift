@@ -147,10 +147,9 @@ private struct NamePage: View {
 
             // The Today header as it will look, updating with each letter.
             VStack(alignment: .leading, spacing: 8) {
-                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)).uppercased())
-                    .font(.jotLabel)
-                    .tracking(1.2)
-                    .foregroundStyle(Color.jotAccent)
+                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                    .font(.jotSection)
+                    .foregroundStyle(Color.jotTextSecondary)
                 Text(UserProfile.greeting(at: .now, name: name))
                     .font(.jotDisplay)
                     .tracking(-0.8)

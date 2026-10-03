@@ -17,9 +17,8 @@ struct FollowUps: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("FOLLOW-UPS")
-                .font(.jotLabel)
-                .tracking(1.2)
+            Text("Follow-ups")
+                .font(.jotSection)
                 .foregroundStyle(Color.jotTextSecondary)
 
             ForEach(followUps) { followUp in

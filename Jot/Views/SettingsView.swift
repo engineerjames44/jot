@@ -391,9 +391,8 @@ private struct BriefPreview: View {
                     Text(summary.title)
                         .font(.subheadline.weight(.semibold))
                     Spacer()
-                    Text("PREVIEW")
-                        .font(.jotLabel)
-                        .tracking(1)
+                    Text("Preview")
+                        .font(.jotSection)
                         .foregroundStyle(Color.jotTextSecondary)
                 }
                 Text(summary.subtitle)
