@@ -3,8 +3,28 @@
 Branch `app-design-pass`. Screens reviewed in the iPhone 17 simulator with sample data:
 onboarding, Today, Inbox, item detail, Settings, capture (listening, confirmation).
 
-Done already on this branch: greeting by name (onboarding step with live preview,
-Settings field, Today header, morning brief title), 3 new tests.
+**Approved 2026-10-03:** the Instrument direction, and on-device sorting first.
+
+Built on this branch:
+- Greeting by name: onboarding step with a live preview, Settings field, Today header,
+  morning brief title.
+- Instrument redesign:
+  - Today as a rail, with a Next line and the "Still open from earlier" fold plus
+    Move to tomorrow.
+  - Bottom bar with the orb between Today and Inbox; Settings opens as a sheet from
+    your initial.
+  - Black full-screen capture stage.
+  - Inbox rows as lines.
+  - Sentence-case labels everywhere, mono time readouts, true-black dark mode.
+- On-device sorting (Foundation Models) is the default; Claude is an explicit choice
+  in Settings. The model only extracts what was said ("Thursday", "at two");
+  `OnDeviceClassifier.resolve` computes the date, because the 3B model got weekday
+  arithmetic wrong in testing (Thursday became Friday).
+- Tests: 37, including `GreetingTests` and `OnDeviceDateTests`.
+
+Still to do:
+- Privacy policy on jamescronin.dev: describe on-device as the default when this merges.
+- Next integrations: Calendar and Reminders, interactive widgets, Spotlight.
 
 ## What's wrong now
 

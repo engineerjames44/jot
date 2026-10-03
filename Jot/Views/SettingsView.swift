@@ -37,7 +37,7 @@ struct SettingsView: View {
                     section("Claude") { apiKeyCard }
                     #endif
 
-                    section("Smart sorting") { SmartSortingCard() }
+                    section("Sorting") { SmartSortingCard() }
 
                     section("Morning brief") { MorningBriefCard() }
 
@@ -239,7 +239,7 @@ struct SettingsView: View {
 
     private var aboutCard: some View {
         VStack(spacing: 0) {
-            aboutRow("Sorting", value: "Claude Haiku 4.5", symbol: "sparkles")
+            aboutRow("Sorting", value: SmartSorting.engineDescription, symbol: "sparkles")
             Divider().overlay(Color.jotBorder)
             aboutRow("Transcription", value: "On-device", symbol: "waveform")
             Divider().overlay(Color.jotBorder)

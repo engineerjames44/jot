@@ -22,7 +22,7 @@ enum SortLater {
     /// Sorts waiting captures, oldest first, stopping at the first problem that
     /// would fail the rest too (offline, sorting off, daily limit).
     static func retryPending(in context: ModelContext) async {
-        guard !isRunning, SmartSorting.isAllowed else { return }
+        guard !isRunning, Classifier.canSort else { return }
         isRunning = true
         defer { isRunning = false }
 

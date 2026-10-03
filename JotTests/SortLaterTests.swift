@@ -24,10 +24,15 @@ struct SortLaterTests {
         #expect(item.details == "record player")
     }
 
-    @Test func sortingNeedsPermission() async {
+    @Test func claudeSortingNeedsPermission() async {
         let previous = UserDefaults.standard.object(forKey: SmartSorting.key)
+        let previousEngine = UserDefaults.standard.object(forKey: SmartSorting.engineKey)
         UserDefaults.standard.set(false, forKey: SmartSorting.key)
-        defer { UserDefaults.standard.set(previous, forKey: SmartSorting.key) }
+        UserDefaults.standard.set(SmartSorting.Engine.claude.rawValue, forKey: SmartSorting.engineKey)
+        defer {
+            UserDefaults.standard.set(previous, forKey: SmartSorting.key)
+            UserDefaults.standard.set(previousEngine, forKey: SmartSorting.engineKey)
+        }
         await #expect(throws: SortingError.notAllowed) {
             try await Classifier.classify("buy milk")
         }
