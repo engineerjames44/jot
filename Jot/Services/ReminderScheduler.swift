@@ -11,7 +11,44 @@ import UserNotifications
 enum ReminderScheduler {
     static let pendingLimit = 64
 
+    /// The refill in flight, if any. Refills are called from many places at once
+    /// (launch, foreground, every edit); running two together could re-add a
+    /// notification for an item that was just completed or deleted.
+    private static var running: Task<Void, Never>?
+    private static var needsRerun = false
+
+    /// Re-syncs notifications. Calls made while a refill is running wait for it
+    /// and trigger one more pass, so the last call always sees the latest data.
     static func refill(using context: ModelContext, now: Date = .now) async {
+        if let running {
+            needsRerun = true
+            await running.value
+            return
+        }
+        let task = Task { @MainActor in
+            var date = now
+            repeat {
+                needsRerun = false
+                await performRefill(using: context, now: date)
+                date = .now
+            } while needsRerun
+        }
+        running = task
+        await task.value
+        running = nil
+    }
+
+    /// What a reminder notification needs, copied out before any `await` so a
+    /// deleted item is never read afterwards.
+    private struct Pending {
+        let id: String
+        let title: String
+        let body: String
+        let fireDate: Date
+        let recurrence: Recurrence?
+    }
+
+    private static func performRefill(using context: ModelContext, now: Date) async {
         let center = UNUserNotificationCenter.current()
 
         let reminderKind = ItemKind.reminder.rawValue
@@ -28,9 +65,15 @@ enum ReminderScheduler {
             .sorted { $0.1 < $1.1 }
 
         let briefs = MorningBrief.requests(using: context, now: now)
-        let upcoming = reminders.prefix(pendingLimit - briefs.count)
+        let upcoming = reminders.prefix(pendingLimit - briefs.count).map { item, fireDate in
+            Pending(id: item.id.uuidString, title: item.title, body: item.details, fireDate: fireDate, recurrence: item.recurrence)
+        }
 
-        center.removeAllPendingNotificationRequests()
+        // Everything except a brief preview the user just asked for.
+        let stale = await center.pendingNotificationRequests()
+            .map(\.identifier)
+            .filter { $0 != MorningBrief.previewIdentifier }
+        center.removePendingNotificationRequests(withIdentifiers: stale)
         // Don't ask before onboarding has explained why.
         let mayPrompt = UserDefaults.standard.bool(forKey: "JotHasOnboarded")
         MorningBrief.scheduleBackgroundRefresh(now: now)
@@ -40,17 +83,17 @@ enum ReminderScheduler {
             try? await center.add(brief)
         }
 
-        for (item, fireDate) in upcoming {
+        for reminder in upcoming {
             let content = UNMutableNotificationContent()
-            content.title = item.title
-            content.body = item.details
+            content.title = reminder.title
+            content.body = reminder.body
             content.sound = .default
-            content.userInfo = ["itemID": item.id.uuidString]
+            content.userInfo = ["itemID": reminder.id]
 
             let request = UNNotificationRequest(
-                identifier: item.id.uuidString,
+                identifier: reminder.id,
                 content: content,
-                trigger: trigger(for: fireDate, recurrence: item.recurrence)
+                trigger: trigger(for: reminder.fireDate, recurrence: reminder.recurrence, now: now)
             )
             try? await center.add(request)
         }
@@ -73,19 +116,28 @@ enum ReminderScheduler {
         }
     }
 
-    private static func trigger(for date: Date, recurrence: Recurrence?) -> UNCalendarNotificationTrigger {
+    static func trigger(for date: Date, recurrence: Recurrence?, now: Date = .now) -> UNCalendarNotificationTrigger {
         let calendar = Calendar.current
-        let components: Set<Calendar.Component> = switch recurrence {
-        case nil: [.year, .month, .day, .hour, .minute]
+        let once: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute]
+        let repeating: Set<Calendar.Component>? = switch recurrence {
+        case nil: nil
         case .daily: [.hour, .minute]
         case .weekly: [.weekday, .hour, .minute]
         case .monthly: [.day, .hour, .minute]
         case .yearly: [.month, .day, .hour, .minute]
         }
-        return UNCalendarNotificationTrigger(
-            dateMatching: calendar.dateComponents(components, from: date),
-            repeats: recurrence != nil
-        )
+        guard let repeating else {
+            return UNCalendarNotificationTrigger(dateMatching: calendar.dateComponents(once, from: date), repeats: false)
+        }
+        // A repeating trigger fires at the next match after now, which can be
+        // before the first occurrence ("every Monday, starting the 20th"). Until
+        // then, schedule the first one alone; a later refill switches to repeating.
+        let matching = calendar.dateComponents(repeating, from: date)
+        if let nextMatch = calendar.nextDate(after: now, matching: matching, matchingPolicy: .nextTime),
+           nextMatch < date.addingTimeInterval(-60) {
+            return UNCalendarNotificationTrigger(dateMatching: calendar.dateComponents(once, from: date), repeats: false)
+        }
+        return UNCalendarNotificationTrigger(dateMatching: matching, repeats: true)
     }
 }
 

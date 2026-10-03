@@ -14,6 +14,8 @@ enum MorningBrief {
     static let taskIdentifier = "com.jamescronin.Jot.brief"
     static let daysAhead = 3
     private static let identifierPrefix = "brief-"
+    /// The one-off "send me a preview" brief; reminder refills leave it alone.
+    static let previewIdentifier = "brief-preview"
 
     // MARK: Settings
 
@@ -146,7 +148,7 @@ enum MorningBrief {
         content.sound = .default
         content.threadIdentifier = "morning-brief"
         let request = UNNotificationRequest(
-            identifier: identifierPrefix + "preview",
+            identifier: previewIdentifier,
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
         )

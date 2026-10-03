@@ -205,6 +205,12 @@ final class CaptureController {
         animate { phase = .transcribing }
 
         Task {
+            #if os(iOS)
+            // Locking the phone right after a hands-free capture would otherwise
+            // suspend us mid-request and downgrade the item to a note.
+            let backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "Finish capture")
+            defer { UIApplication.shared.endBackgroundTask(backgroundTask) }
+            #endif
             let audioFile = await recording?.value
             do {
                 let transcript = try await transcription?.value
