@@ -28,5 +28,17 @@
 | 2.1 Proxy (ADR-002) | app 76a68fb; site `jot-classify-api` branch | `/api/jot/classify` in jamescronin-dev (branch, not pushed). Verified locally: 400s for bad input, real classification in ~1.5 s, logs carry no transcript. App `ProxyClassifier` + `SortingError`; `Classifier.classify` is the single entry point (capture + Siri). Debug: `-JotAPIBaseURL`, `-JotDemoRealSorting`. |
 | 2.2 AI disclosure + consent | 4f222ac; site privacy page | Smart sorting switch (off by default) in onboarding + Settings; `Classifier` refuses without it (`SortingError.notAllowed`). Privacy policy at /jot/privacy on the site branch. |
 
+## Phase 3 — UX gaps (done except Add to Calendar)
+| Task | Commit | Notes |
+|---|---|---|
+| Schema V2 (ADR-004) | 222e167 | `parentID`, `needsSorting`; V1 frozen; lightweight stage. Unit test + in-place simulator upgrade verified. |
+| 3.6 Follow-ups (James's note #1) | a3f1fde | Detail ⋯ menu and Follow-ups section start a hands-free capture linked via `followUpParentID`. Verified: follow-up stored with parent and listed. |
+| 3.5 Sort later / Sort again | a3f1fde | `SortLater` retries flagged captures on launch/foreground and when Smart sorting turns on; banner + Sort now; menu Sort again. Verified: note → reminder within ~3 s of enabling sorting. |
+| 3.2 Undo delete | 82a19e6 | `RecentlyDeleted` (6 s), same-ID restore, audio removed after window. Unit tested (simulator input lag exceeded the window in manual testing). |
+| 3.3 Notification tap + Done/Snooze | 18fd37c | `AppRouter` → Inbox push. Category `jot.reminder`. Deep link verified in simulator; action buttons need a device check. |
+| 3.4 Widget taps | 18fd37c | Medium rows link to items; small opens next item or records when empty; orb records. Needs a home-screen check on device. |
+| 3.7 Mic denied | 50b837b | Open Settings button on failure card. Verified in simulator with mic revoked. |
+| 3.1 Events | b1119df | Events now alert at start (verified pending notification). **Deferred:** "Add to Calendar" (needs write-only calendar permission + product decision). |
+
 ## Tech debt
 - 450 ms sleep before delete is a timing assumption; replace with deleting in the parent's `onChange(of: path)` if it ever races.
