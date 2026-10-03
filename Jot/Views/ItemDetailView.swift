@@ -41,18 +41,6 @@ struct ItemDetailView: View {
                 }
 
                 TranscriptQuote(transcript: item.transcript, createdAt: item.createdAt)
-
-                Button(role: .destructive) {
-                    confirmingDelete = true
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                        .font(.jotHeadline)
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                }
-                .buttonStyle(.pressable)
-                .padding(.top, 4)
             }
             .padding(.horizontal, JotMetrics.gutter)
             .padding(.top, 4)
@@ -64,15 +52,34 @@ struct ItemDetailView: View {
         .scrollDismissesKeyboard(.interactively)
         .background(Color.jotBackground.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("Delete this item?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                isDeleted = true
-                playback.stop()
-                ItemActions.delete(item, in: modelContext)
-                dismiss()
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        confirmingDelete = true
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                }
+                .accessibilityLabel("More")
+                // Anchored to the menu button so iOS presents it from there.
+                .confirmationDialog("Delete this item?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+                    Button("Delete", role: .destructive) {
+                        isDeleted = true
+                        playback.stop()
+                        dismiss()
+                        // Delete once the screen has gone: SwiftData can crash if a view
+                        // still bound to the item reads it after it's deleted.
+                        let item = item, context = modelContext
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(450))
+                            ItemActions.delete(item, in: context)
+                        }
+                    }
+                } message: {
+                    Text("The recording is deleted too.")
+                }
             }
-        } message: {
-            Text("The recording is deleted too.")
         }
         .task { await playback.load(fileName: item.audioFileName) }
         .onDisappear {

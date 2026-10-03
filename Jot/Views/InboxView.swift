@@ -4,15 +4,17 @@ import SwiftUI
 struct InboxView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.jotAnimation) private var animation
+    @Environment(CaptureController.self) private var capture
     @Query(sort: \JotItem.createdAt, order: .reverse) private var items: [JotItem]
 
     @State private var searchText = ""
     @State private var kindFilter: ItemKind?
     @State private var openRow: UUID?
     @FocusState private var searchFocused: Bool
+    @State private var path: [JotItem] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     header
@@ -32,14 +34,16 @@ struct InboxView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: JotItem.self) { ItemDetailView(item: $0) }
         }
-        // On the stack, so the orb stays reachable on pushed screens too.
+        // Only at the root: on a detail screen the orb would cover its controls.
+        // It comes back while a capture is underway (e.g. from the Action Button).
         .safeAreaInset(edge: .bottom) {
-            if !searchFocused {
+            if !searchFocused && (path.isEmpty || capture.phase != .idle) {
                 CaptureDock()
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(animation, value: searchFocused)
+        .animation(animation, value: path.isEmpty)
     }
 
     // MARK: Header & search

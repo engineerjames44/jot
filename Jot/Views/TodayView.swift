@@ -58,9 +58,10 @@ struct TodayView: View {
     @State private var completing: Set<UUID> = []
     @State private var completedCount = 0
     @State private var openRow: UUID?
+    @State private var path: [JotItem] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             TimelineView(.everyMinute) { context in
                 let content = buildContent(now: context.date)
                 ScrollViewReader { proxy in
@@ -107,8 +108,15 @@ struct TodayView: View {
             .refreshable { calendar.reload() }
             .sensoryFeedback(.success, trigger: completedCount)
         }
-        // On the stack, so the orb stays reachable on pushed screens too.
-        .safeAreaInset(edge: .bottom) { CaptureDock() }
+        // Only at the root: on a detail screen the orb would cover its controls.
+        // It comes back while a capture is underway (e.g. from the Action Button).
+        .safeAreaInset(edge: .bottom) {
+            if path.isEmpty || capture.phase != .idle {
+                CaptureDock()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(animation, value: path.isEmpty)
     }
 
     // MARK: Sections
