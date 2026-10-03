@@ -1,3 +1,4 @@
+import AVFAudio
 import Foundation
 import Observation
 import SwiftData
@@ -58,6 +59,11 @@ final class CaptureController {
     }
 
     static let levelCount = 48
+    /// Longest recording, so a stuck mic can't run forever.
+    static let maxHeldDuration: TimeInterval = 180
+    static let maxHandsFreeDuration: TimeInterval = 90
+    /// Loudness above which we treat a level as speech.
+    private static let speechLevel: Float = 0.35
 
     private(set) var phase: Phase = .idle
     /// Words so far, updated live while recording.
@@ -90,6 +96,13 @@ final class CaptureController {
     /// the orb, so recording stops after a pause in speech (or a tap on the orb).
     private(set) var isHandsFree = false
     private var heardSpeechAt: Date?
+    /// Whether anything louder than silence came in during this recording, so a
+    /// failed transcription can still keep the audio.
+    private var heardSpeech = false
+    /// Ends the recording on time limits and pauses, independent of audio
+    /// arriving (a dead mic or an interruption stops the chunks).
+    private var watchdogTask: Task<Void, Never>?
+    private var interruptionObservers: [any NSObjectProtocol] = []
     private let liveActivity = LiveActivityController()
     private var context: ModelContext?
     private var transcriptionTask: Task<String, any Error>?
@@ -118,6 +131,7 @@ final class CaptureController {
         if confirmation != nil { dismissConfirmation() }
         dismissTask?.cancel()
         isHeld = true
+        heardSpeech = false
         liveTranscript = ""
         levels = Array(repeating: 0, count: Self.levelCount)
         animate { phase = .starting }
@@ -141,6 +155,7 @@ final class CaptureController {
                 animate { phase = .recording(since: .now) }
                 emit(.start)
                 liveActivity.start()
+                startWatchdog()
                 // Released while permissions or the engine were still starting up.
                 if !isHeld { finishRecording() }
             } catch {
@@ -170,6 +185,7 @@ final class CaptureController {
 
     private func finishRecording() {
         guard case .recording(let since) = phase, let context else { return }
+        stopWatchdog()
         source.stop()
         emit(.stop)
         isHandsFree = false
@@ -194,8 +210,12 @@ final class CaptureController {
                 let transcript = try await transcription?.value
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 guard !transcript.isEmpty else {
-                    AudioStore.remove(audioFile)
-                    fail(message: "Didn't catch that. Try again?")
+                    if heardSpeech, audioFile != nil {
+                        saveVoiceNote(audioFile: audioFile, into: context)
+                    } else {
+                        AudioStore.remove(audioFile)
+                        fail(message: "Didn't catch that. Try again?")
+                    }
                     return
                 }
                 liveTranscript = transcript
@@ -214,10 +234,27 @@ final class CaptureController {
                 }
                 await ReminderScheduler.refill(using: context)
             } catch {
-                AudioStore.remove(audioFile)
-                fail(error)
+                // Transcription failed (offline first run, missing speech assets,
+                // unsupported language). Never lose what was said: keep the audio.
+                if audioFile != nil {
+                    saveVoiceNote(audioFile: audioFile, into: context)
+                } else {
+                    fail(error)
+                }
             }
         }
+    }
+
+    /// Keeps a recording that couldn't be turned into words, so it can be
+    /// played back from the item.
+    private func saveVoiceNote(audioFile: String?, into context: ModelContext) {
+        let note = ClassifiedItem(
+            type: .note,
+            title: "Voice note",
+            details: "Jot couldn't transcribe this one. The recording is saved here."
+        )
+        let item = save(note, transcript: "", audioFile: audioFile, into: context)
+        showConfirmation(for: item, notice: "Couldn't make out the words, so the recording was saved.")
     }
 
     @discardableResult
@@ -308,20 +345,75 @@ final class CaptureController {
         if levels.count > Self.levelCount {
             levels.removeFirst(levels.count - Self.levelCount)
         }
-        if isHandsFree { checkForPause(newLevels) }
+        if newLevels.contains(where: { $0 > Self.speechLevel }) {
+            heardSpeech = true
+            heardSpeechAt = .now
+        }
+    }
+
+    // MARK: - Watchdog
+
+    private func startWatchdog() {
+        stopWatchdog()
+        watchdogTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard let self, !Task.isCancelled else { return }
+                self.checkLimits()
+            }
+        }
+        observeInterruptions()
+    }
+
+    private func stopWatchdog() {
+        watchdogTask?.cancel()
+        watchdogTask = nil
+        for observer in interruptionObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        interruptionObservers = []
     }
 
     /// Hands-free: stop after ~2 s of quiet once speech has started, or give up
-    /// if nothing is said for 8 s. Recordings are capped at 90 s.
-    private func checkForPause(_ newLevels: [Float]) {
-        guard case .recording(let since) = phase, let context else { return }
+    /// if nothing is said for 8 s. Every recording has a hard cap.
+    private func checkLimits() {
+        guard case .recording(let since) = phase else { return }
         let now = Date.now
-        if newLevels.contains(where: { $0 > 0.35 }) { heardSpeechAt = now }
         let elapsed = now.timeIntervalSince(since)
-        let quietFor = heardSpeechAt.map { now.timeIntervalSince($0) }
-        if (quietFor ?? 0) > 2.2 || (heardSpeechAt == nil && elapsed > 8) || elapsed > 90 {
-            endCapture(into: context)
+        if isHandsFree {
+            let quietFor = heardSpeechAt.map { now.timeIntervalSince($0) }
+            if (quietFor ?? 0) > 2.2 || (heardSpeechAt == nil && elapsed > 8) || elapsed > Self.maxHandsFreeDuration {
+                stopNow()
+            }
+        } else if elapsed > Self.maxHeldDuration {
+            stopNow()
         }
+    }
+
+    /// A call, Siri, or the mic going away (AirPods out) ends the recording and
+    /// keeps what was said so far.
+    private func observeInterruptions() {
+        #if os(iOS)
+        let center = NotificationCenter.default
+        let session = AVAudioSession.sharedInstance()
+        interruptionObservers = [
+            center.addObserver(forName: AVAudioSession.interruptionNotification, object: session, queue: .main) { [weak self] note in
+                let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+                guard raw == AVAudioSession.InterruptionType.began.rawValue else { return }
+                MainActor.assumeIsolated { self?.stopNow() }
+            },
+            center.addObserver(forName: AVAudioSession.routeChangeNotification, object: session, queue: .main) { [weak self] note in
+                let raw = note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt
+                guard raw == AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue else { return }
+                MainActor.assumeIsolated { self?.stopNow() }
+            },
+        ]
+        #endif
+    }
+
+    private func stopNow() {
+        guard isRecording else { return }
+        endCapture(into: context ?? SharedStore.container.mainContext)
     }
 
     private func updateTranscript(_ text: String) {
@@ -336,6 +428,7 @@ final class CaptureController {
     }
 
     private func fail(_ error: any Error) {
+        stopWatchdog()
         if isRecording {
             source.stop()
             emit(.stop)
