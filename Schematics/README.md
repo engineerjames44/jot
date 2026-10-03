@@ -1,6 +1,7 @@
 # Schematics
 
-KiCad hardware design files for Jot.
+KiCad hardware design files for Jot, one folder per board revision.
 
-Keep each KiCad project in its own subfolder (e.g. `Schematics/<board-name>/`) so its
-`.kicad_pro`, `.kicad_sch`, `.kicad_pcb`, and project-local symbol/footprint libraries stay together.
+| Revision | Status |
+| --- | --- |
+| [RevA](RevA/README.md) | Architecture agreed; part selection and schematic in progress |
