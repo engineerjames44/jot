@@ -127,7 +127,7 @@ final class CaptureController {
 
     /// Call when the orb is pressed down.
     func beginCapture() {
-        guard !phase.isBusy else { return }
+        guard !phase.isBusy, SharedStore.canWrite else { return }
         if confirmation != nil { dismissConfirmation() }
         dismissTask?.cancel()
         isHeld = true

@@ -13,17 +13,33 @@ enum SharedStore {
         return base.appending(path: "Jot.store")
     }
 
-    static let container: ModelContainer = {
+    /// The store, opened once with the versioned schema (ADR-001). If opening
+    /// fails, `openError` says why and the container is an empty in-memory store
+    /// that exists only so the app can launch and explain. Nothing may write to it.
+    private static let loaded: (container: ModelContainer, openError: String?) = {
         migrateLegacyStoreIfNeeded()
-        let configuration = ModelConfiguration(url: storeURL)
+        let schema = Schema(versionedSchema: JotSchemaV1.self)
         do {
-            return try ModelContainer(for: JotItem.self, DevNote.self, configurations: configuration)
+            let container = try ModelContainer(
+                for: schema,
+                migrationPlan: JotMigrationPlan.self,
+                configurations: ModelConfiguration(url: storeURL)
+            )
+            return (container, nil)
         } catch {
-            // Never crash-loop on launch; run in memory and surface it in the console.
             print("Jot: couldn't open the store at \(storeURL.path): \(error)")
-            return try! ModelContainer(for: JotItem.self, DevNote.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            let placeholder = try! ModelContainer(for: schema, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            return (placeholder, String(describing: error))
         }
     }()
+
+    static var container: ModelContainer { loaded.container }
+
+    /// Why the store couldn't be opened, if it couldn't.
+    static var openError: String? { loaded.openError }
+
+    /// False when captures would be lost because the real store isn't open.
+    static var canWrite: Bool { openError == nil }
 
     /// Earlier builds used SwiftData's default location in the app's own
     /// container. Copy that store (and its WAL files) into the group once.

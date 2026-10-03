@@ -25,6 +25,9 @@ struct JotThisIntent: AppIntent {
             return .result(dialog: "There was nothing to jot.")
         }
 
+        guard SharedStore.canWrite else {
+            return .result(dialog: "Jot can't open your notes right now, so nothing was saved. Open Jot for details.")
+        }
         let context = SharedStore.container.mainContext
         let dialog: IntentDialog
         do {

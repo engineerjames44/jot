@@ -27,15 +27,21 @@ struct JotApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(capture)
-                .environment(calendar)
-                .onOpenURL { url in
-                    // jot://record, from the widgets' record buttons.
-                    if url.scheme == "jot", url.host() == "record" {
-                        capture.toggleHandsFree(into: SharedStore.container.mainContext)
-                    }
+            Group {
+                if SharedStore.canWrite {
+                    RootView()
+                } else {
+                    StoreUnavailableView()
                 }
+            }
+            .environment(capture)
+            .environment(calendar)
+            .onOpenURL { url in
+                // jot://record, from the widgets' record buttons.
+                if url.scheme == "jot", url.host() == "record" {
+                    capture.toggleHandsFree(into: SharedStore.container.mainContext)
+                }
+            }
         }
         .modelContainer(SharedStore.container)
         .backgroundTask(.appRefresh(MorningBrief.taskIdentifier)) {
