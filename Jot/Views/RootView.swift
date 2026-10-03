@@ -106,6 +106,17 @@ struct RootView: View {
             // Turning sorting on sorts what was kept as notes while it was off.
             if allowed { Task { await SortLater.retryPending(in: modelContext) } }
         }
+        #if DEBUG
+        .onAppear {
+            // -JotStartTab inbox|settings|develop: open a tab directly, for screenshots.
+            switch UserDefaults.standard.string(forKey: "JotStartTab") {
+            case "inbox": screen = .inbox
+            case "settings": screen = .settings
+            case "develop": screen = .develop
+            default: break
+            }
+        }
+        #endif
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
             #if DEBUG

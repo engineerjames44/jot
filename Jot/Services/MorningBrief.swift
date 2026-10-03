@@ -41,7 +41,7 @@ enum MorningBrief {
     }
 
     /// What the brief for `day` says, given everything Jot and the calendar know.
-    static func summary(for day: Date, items: [JotItem], events: [CalendarEvent]) -> Summary {
+    static func summary(for day: Date, items: [JotItem], events: [CalendarEvent], name: String = UserProfile.name) -> Summary {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start) ?? day
@@ -82,15 +82,17 @@ enum MorningBrief {
         if !taskTitles.isEmpty { lines.append("Tasks · " + list(taskTitles)) }
 
         let weekday = day.formatted(.dateTime.weekday(.wide))
+        // With a name it greets ("Good morning, James"); without, it names the day.
+        let title = UserProfile.firstName(name).isEmpty ? "Your \(weekday)" : UserProfile.greeting(at: day, name: name)
         if lines.isEmpty {
             return Summary(
-                title: "Your \(weekday)",
+                title: title,
                 subtitle: "A clear day",
                 body: "Nothing scheduled. Hold the orb when something comes up."
             )
         }
         return Summary(
-            title: "Your \(weekday)",
+            title: title,
             subtitle: [count(eventLines.count, "event"), count(reminders.count, "reminder"), count(taskTitles.count, "task")]
                 .joined(separator: " · "),
             body: lines.joined(separator: "\n")

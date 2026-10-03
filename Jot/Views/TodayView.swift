@@ -307,6 +307,7 @@ private extension TodayContent {
 private struct TodayHeader: View {
     let now: Date
     let content: TodayContent
+    @AppStorage(UserProfile.nameKey, store: UserProfile.defaults) private var name = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -315,10 +316,12 @@ private struct TodayHeader: View {
                 .tracking(1.2)
                 .foregroundStyle(Color.jotAccent)
 
-            Text(greeting)
+            Text(UserProfile.greeting(at: now, name: name))
                 .font(.jotDisplay)
                 .tracking(-0.8)
                 .foregroundStyle(Color.jotTextPrimary)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
 
             HStack(spacing: 14) {
                 SummaryCount(value: content.eventCount, noun: "event", color: .jotEvent)
@@ -329,15 +332,6 @@ private struct TodayHeader: View {
         }
         .padding(.top, 12)
         .accessibilityElement(children: .combine)
-    }
-
-    private var greeting: String {
-        switch Calendar.current.component(.hour, from: now) {
-        case 5..<12: "Good morning"
-        case 12..<17: "Good afternoon"
-        case 17..<22: "Good evening"
-        default: "Hello, night owl"
-        }
     }
 }
 

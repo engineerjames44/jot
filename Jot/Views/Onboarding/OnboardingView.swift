@@ -1,13 +1,13 @@
 import SwiftUI
 
-/// Three short animated pages (hold → speak → done), then permissions,
-/// each explained before the system asks.
+/// Three short animated pages (hold → speak → done), the name to greet you by,
+/// then permissions, each explained before the system asks.
 struct OnboardingView: View {
     var onFinish: () -> Void
 
     @Environment(\.jotAnimation) private var animation
     @State private var page = 0
-    private let pageCount = 4
+    private let pageCount = 5
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,8 +50,13 @@ struct OnboardingView: View {
                 ) { DoneIllustration(isActive: $0) }
                 .tag(2)
 
+                NamePage {
+                    withAnimation(animation) { page = 4 }
+                }
+                .tag(3)
+
                 PermissionsPage()
-                    .tag(3)
+                    .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 
@@ -129,6 +134,83 @@ private struct IntroPage<Illustration: View>: View {
     }
 }
 
+/// Asks what to call you, with the greeting it'll produce previewed as you type.
+private struct NamePage: View {
+    var onSubmit: () -> Void
+
+    @AppStorage(UserProfile.nameKey, store: UserProfile.defaults) private var name = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer(minLength: 12)
+
+            // The Today header as it will look, updating with each letter.
+            VStack(alignment: .leading, spacing: 8) {
+                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)).uppercased())
+                    .font(.jotLabel)
+                    .tracking(1.2)
+                    .foregroundStyle(Color.jotAccent)
+                Text(UserProfile.greeting(at: .now, name: name))
+                    .font(.jotDisplay)
+                    .tracking(-0.8)
+                    .foregroundStyle(Color.jotTextPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.interpolate)
+                    .animation(.jot, value: name)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .jotCard(padding: 0)
+            .padding(.horizontal, 24)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Preview: \(UserProfile.greeting(at: .now, name: name))")
+
+            Spacer(minLength: 12)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("04")
+                    .font(.jotTime)
+                    .foregroundStyle(Color.jotAccent)
+                Text("What should Jot call you?")
+                    .font(.jotDisplay)
+                    .tracking(-0.8)
+                    .foregroundStyle(Color.jotTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                TextField("Your first name", text: $name)
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .textContentType(.givenName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.next)
+                    .focused($focused)
+                    .onSubmit {
+                        name = UserProfile.cleaned(name)
+                        onSubmit()
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 56)
+                    .background(Color.jotSurface, in: .rect(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(focused ? Color.jotAccent : Color.jotBorder, lineWidth: focused ? 2 : 1)
+                    }
+
+                Text("Optional. It stays on this iPhone, and you can change it in Settings.")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+        }
+        .contentShape(.rect)
+        .onTapGesture { focused = false }
+        .onDisappear { name = UserProfile.cleaned(name) }
+    }
+}
+
 private struct PermissionsPage: View {
     @Environment(CalendarService.self) private var calendar
     @State private var permissions = PermissionCenter()
@@ -136,7 +218,7 @@ private struct PermissionsPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("04")
+                Text("05")
                     .font(.jotTime)
                     .foregroundStyle(Color.jotAccent)
                     .padding(.top, 24)

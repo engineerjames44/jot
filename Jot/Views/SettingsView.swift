@@ -27,6 +27,8 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 28) {
                     header
 
+                    section("You") { NameCard() }
+
                     #if DEBUG
                     // Release builds sort through Jot's server; a personal key is
                     // only for development.
@@ -402,5 +404,39 @@ private struct BriefPreview: View {
         .background(Color.jotRaised, in: .rect(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Preview: \(summary.title). \(summary.subtitle). \(summary.body)")
+    }
+}
+
+/// The name Jot greets you by on Today and in the morning brief.
+private struct NameCard: View {
+    @AppStorage(UserProfile.nameKey, store: UserProfile.defaults) private var name = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "hand.wave.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.jotAccent)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Your name")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                TextField("Add a name to be greeted by", text: $name)
+                    .font(.jotBody)
+                    .textContentType(.givenName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+                    .focused($focused)
+                    .onSubmit { name = UserProfile.cleaned(name) }
+            }
+        }
+        .jotCard()
+        .onChange(of: focused) { _, isFocused in
+            if !isFocused { name = UserProfile.cleaned(name) }
+        }
     }
 }
