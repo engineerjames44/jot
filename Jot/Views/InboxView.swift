@@ -88,7 +88,7 @@ struct InboxView: View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(searchFocused ? Color.jotAccent : Color.jotTextSecondary)
+                .foregroundStyle(searchFocused ? Color.jotAccentText : Color.jotTextSecondary)
             TextField("Search titles, details, what you said", text: $searchText)
                 .font(.jotBody)
                 .foregroundStyle(Color.jotTextPrimary)
@@ -320,6 +320,7 @@ private struct WeekStrip: View {
 
     let days: [Day]
     var onSelect: (Date) -> Void
+    @ScaledMetric(relativeTo: .title3) private var cellWidth: CGFloat = 38
 
     var body: some View {
         ScrollView(.horizontal) {
@@ -341,10 +342,10 @@ private struct WeekStrip: View {
         } label: {
             VStack(spacing: 6) {
                 Text(day.date.formatted(.dateTime.weekday(.abbreviated)))
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(.caption2, design: .rounded, weight: .semibold))
                     .foregroundStyle(isToday ? Color.jotBackground.opacity(0.75) : Color.jotTextSecondary)
                 Text(day.date.formatted(.dateTime.day()))
-                    .font(.system(size: 19, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.system(.title3, design: .rounded, weight: .bold).monospacedDigit())
                     .foregroundStyle(isToday ? Color.jotBackground : Color.jotTextPrimary)
                 HStack(spacing: 3) {
                     // One dot per kind on the day, in a fixed order.
@@ -354,7 +355,9 @@ private struct WeekStrip: View {
                 }
                 .frame(height: 5)
             }
-            .frame(width: 46, height: 72)
+            .frame(minWidth: cellWidth)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 10)
             .background(isToday ? Color.jotTextPrimary : Color.jotSurface, in: .rect(cornerRadius: 14, style: .continuous))
             .opacity(hasItems || isToday ? 1 : 0.55)
         }
@@ -374,15 +377,33 @@ private struct InboxCard: View {
     var date: Date?
     var showsTime = false
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .footnote) private var timeColumn: CGFloat = 64
+
+    /// At accessibility text sizes the time goes above the title instead.
+    private var stacksTime: Bool { showsTime && typeSize.isAccessibilitySize }
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if stacksTime {
+                Text(timeLabel)
+                    .font(.jotReadout)
+                    .foregroundStyle(Color.jotTextSecondary)
+            }
+            row
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var row: some View {
         HStack(alignment: .top, spacing: 12) {
-            if showsTime {
+            if showsTime, !stacksTime {
                 Text(timeLabel)
                     .font(.jotReadout)
                     .foregroundStyle(Color.jotTextSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-                    .frame(width: 64, alignment: .trailing)
+                    .frame(width: timeColumn, alignment: .trailing)
                     .padding(.top, 3)
             }
             KindNode(kind: item.kind)
@@ -434,6 +455,7 @@ private struct InboxCard: View {
         .padding(.vertical, 12)
         .padding(.leading, 4)
         .padding(.trailing, ItemActions.canComplete(item) ? 44 : 0)
+        .accessibilityElement(children: .combine)
         .overlay(alignment: .bottom) {
             Rectangle().fill(Color.jotTextSecondary.opacity(0.15)).frame(height: 0.5).padding(.leading, 32)
         }

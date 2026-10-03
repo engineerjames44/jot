@@ -106,7 +106,7 @@ struct UndoToast: View {
                     withAnimation(.jot) { deleted.undo() }
                 }
                 .font(.jotHeadline)
-                .foregroundStyle(Color.jotAccent)
+                .foregroundStyle(Color.jotAccentText)
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 14)

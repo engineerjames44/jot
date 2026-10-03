@@ -112,6 +112,9 @@ final class CaptureController {
     private var transcriptionTask: Task<String, any Error>?
     private var recordingTask: Task<String?, Never>?
     private var dismissTask: Task<Void, Never>?
+    /// A gentle note above the orb, not an error ("Hold the orb while you speak.").
+    private(set) var hint: String?
+    private var hintTask: Task<Void, Never>?
 
     init(
         source: any AudioSource = MicAudioSource(),
@@ -133,6 +136,21 @@ final class CaptureController {
     func beginCapture() {
         guard !phase.isBusy, SharedStore.canWrite else { return }
         if confirmation != nil { dismissConfirmation() }
+        clearHint()
+        // First use: ask for the microphone before the screen goes dark, so the
+        // system prompt doesn't land on top of "Listening".
+        if AVAudioApplication.shared.recordPermission == .undetermined {
+            isHeld = false
+            isHandsFree = false
+            Task {
+                if await AVAudioApplication.requestRecordPermission() {
+                    showHint("You're set. Hold the orb and speak.")
+                } else {
+                    fail(AudioSourceError.permissionDenied)
+                }
+            }
+            return
+        }
         dismissTask?.cancel()
         isHeld = true
         heardSpeech = false
@@ -208,9 +226,13 @@ final class CaptureController {
         recordingTask = nil
 
         guard Date.now.timeIntervalSince(since) >= 0.4 else {
+            // A tap, not a hold: teach the gesture rather than report an error.
             transcription?.cancel()
             Task { AudioStore.remove(await recording?.value) }
-            fail(message: "Hold the orb while you speak.")
+            liveActivity.endImmediately()
+            followUpParentID = nil
+            animate { phase = .idle }
+            showHint("Hold the orb while you speak.")
             return
         }
 
@@ -244,6 +266,11 @@ final class CaptureController {
                     let result = try await classify(transcript)
                     let item = save(result, transcript: transcript, audioFile: audioFile, into: context)
                     showConfirmation(for: item, notice: nil)
+                    // The moment a nudge makes sense: Jot just made something with a time.
+                    // Only prompts if notifications were never decided.
+                    if item.dueDate != nil, item.kind == .reminder || item.kind == .event {
+                        _ = await ReminderScheduler.ensureAuthorized()
+                    }
                 } catch {
                     // Never lose what was said: keep it as a plain note.
                     let fallback = ClassifiedItem(type: .note, title: String(transcript.prefix(60)), details: "")
@@ -251,7 +278,7 @@ final class CaptureController {
                     // Sorted later: on demand, or when Jot is back online with sorting on.
                     item.needsSorting = true
                     try? context.save()
-                    showConfirmation(for: item, notice: "Saved as a note. \(error.localizedDescription)")
+                    showConfirmation(for: item, notice: Self.fallbackNotice(for: error))
                 }
                 await ReminderScheduler.refill(using: context)
             } catch {
@@ -470,6 +497,36 @@ final class CaptureController {
         // Long enough to reach the Settings button.
         scheduleDismiss(after: failureNeedsSettings ? 10 : 5)
         liveActivity.failed(message)
+    }
+
+    /// Why a capture stayed a note. The Apple Intelligence explanation is shown
+    /// once in full; after that a short line, so it doesn't nag on every capture.
+    private static func fallbackNotice(for error: any Error) -> String {
+        guard case SortingError.onDeviceUnavailable = error else {
+            return "Saved as a note. \(error.localizedDescription)"
+        }
+        let key = "JotExplainedAppleIntelligence"
+        if UserDefaults.standard.bool(forKey: key) {
+            return "Saved as a note. It'll be sorted once Apple Intelligence is on."
+        }
+        UserDefaults.standard.set(true, forKey: key)
+        return "Saved as a note. \(error.localizedDescription)"
+    }
+
+    private func showHint(_ text: String) {
+        animate { hint = text }
+        hintTask?.cancel()
+        hintTask = Task {
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            clearHint()
+        }
+    }
+
+    private func clearHint() {
+        hintTask?.cancel()
+        guard hint != nil else { return }
+        animate { hint = nil }
     }
 
     private func scheduleDismiss(after seconds: Double) {

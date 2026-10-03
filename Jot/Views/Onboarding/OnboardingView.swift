@@ -7,7 +7,20 @@ struct OnboardingView: View {
 
     @Environment(\.jotAnimation) private var animation
     @State private var page = 0
+    /// True while a page is sliding in. The pager drops a selection change made
+    /// mid-slide, which left the dots and the page out of step and skipped pages.
+    @State private var isTurning = false
     private let pageCount = 5
+
+    private func turn(to target: Int) {
+        guard !isTurning, target != page else { return }
+        isTurning = true
+        withAnimation(animation) {
+            page = target
+        } completion: {
+            isTurning = false
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -15,9 +28,7 @@ struct OnboardingView: View {
                 Wordmark(size: 34)
                 Spacer()
                 if page < pageCount - 1 {
-                    Button("Skip") {
-                        withAnimation(animation) { page = pageCount - 1 }
-                    }
+                    Button("Skip") { turn(to: pageCount - 1) }
                     .font(.jotHeadline)
                     .foregroundStyle(Color.jotTextSecondary)
                 }
@@ -50,9 +61,7 @@ struct OnboardingView: View {
                 ) { DoneIllustration(isActive: $0) }
                 .tag(2)
 
-                NamePage {
-                    withAnimation(animation) { page = 4 }
-                }
+                NamePage { turn(to: 4) }
                 .tag(3)
 
                 PermissionsPage()
@@ -65,8 +74,10 @@ struct OnboardingView: View {
 
                 Button {
                     if page < pageCount - 1 {
-                        withAnimation(animation) { page += 1 }
+                        turn(to: page + 1)
                     } else {
+                        // The brief needs notifications; ask now, while the choice is fresh.
+                        if MorningBrief.isEnabled { Task { _ = await ReminderScheduler.ensureAuthorized() } }
                         onFinish()
                     }
                 } label: {
@@ -112,7 +123,7 @@ private struct IntroPage<Illustration: View>: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(step)
                     .font(.jotTime)
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                 Text(title)
                     .font(.jotDisplay)
                     .tracking(-0.8)
@@ -171,7 +182,7 @@ private struct NamePage: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("04")
                     .font(.jotTime)
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                 Text("What should Jot call you?")
                     .font(.jotDisplay)
                     .tracking(-0.8)
@@ -200,6 +211,7 @@ private struct NamePage: View {
                 Text("Optional. It stays on this iPhone, and you can change it in Settings.")
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
@@ -219,7 +231,7 @@ private struct PermissionsPage: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("05")
                     .font(.jotTime)
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                     .padding(.top, 24)
                 Text("A few permissions")
                     .font(.jotDisplay)
@@ -239,12 +251,48 @@ private struct PermissionsPage: View {
                     }
                     .staggeredAppear(index + 1)
                 }
+
+                BriefRow()
+                    .staggeredAppear(PermissionCenter.Kind.allCases.count + 1)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
         .task { await permissions.refresh() }
+    }
+}
+
+/// The morning brief, on by default: it's the reason to open Jot each day.
+private struct BriefRow: View {
+    @AppStorage(MorningBrief.Keys.enabled) private var isEnabled = false
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "sunrise.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.jotReminder)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Morning brief")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                Text("Your day in one notification at 8:00 AM. Change the time in Settings.")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Toggle("Morning brief", isOn: $isEnabled)
+                .labelsHidden()
+                .tint(Color.jotAccentText)
+        }
+        .jotCard()
+        .onAppear {
+            // On unless the person has already decided.
+            if UserDefaults.standard.object(forKey: MorningBrief.Keys.enabled) == nil { isEnabled = true }
+        }
     }
 }
 
@@ -255,9 +303,15 @@ struct PermissionRow: View {
     var onRequest: () -> Void
 
     @Environment(\.jotAnimation) private var animation
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(spacing: 14) {
+        // Side by side normally; stacked at accessibility sizes so the button
+        // doesn't push the card past the screen edge.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 14))
+        layout {
             Image(systemName: kind.symbol)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(status == .granted ? Color.jotTask : Color.jotAccent)
@@ -320,7 +374,7 @@ private struct PageDots: View {
         HStack(spacing: 6) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Color.jotAccent : Color.jotTextSecondary.opacity(0.35))
+                    .fill(index == current ? Color.jotAccentText : Color.jotTextSecondary.opacity(0.35))
                     .frame(width: index == current ? 22 : 7, height: 7)
             }
         }

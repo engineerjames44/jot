@@ -102,7 +102,7 @@ enum SortingError: LocalizedError, Equatable {
         case .unavailable: "Jot's sorting is unavailable right now."
         case .unreadable: "Jot couldn't work out what kind of item this is."
         case .notAllowed: "Smart sorting is off. You can turn it on in Settings."
-        case .onDeviceUnavailable: "Apple Intelligence isn't available, so this was saved as a note. It'll be sorted when it is."
+        case .onDeviceUnavailable: "To sort automatically, turn on Apple Intelligence in the Settings app, or choose Claude in Jot's settings."
         }
     }
 

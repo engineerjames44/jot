@@ -71,7 +71,7 @@ struct RootView: View {
                 }
             }
         }
-        .tint(Color.jotAccent)
+        .tint(Color.jotAccentText)
         .sensoryFeedback(trigger: capture.feedbackTick) { _, _ in capture.feedback.sensory }
         .sheet(item: $capture.editingItem) { item in
             NavigationStack {

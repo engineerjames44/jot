@@ -114,8 +114,11 @@ struct JotButtonStyle: ButtonStyle {
                 .padding(.horizontal, isCompact ? 14 : 20)
                 .padding(.vertical, isCompact ? 8 : 12)
                 .foregroundStyle(role == .primary ? Color.white : Color.jotTextPrimary)
-                .background(role == .primary ? Color.jotAccent : Color.jotRaised, in: .capsule)
+                .background(role == .primary ? Color.jotAccentText : Color.jotRaised, in: .capsule)
                 .overlay(Capsule().strokeBorder(Color.jotBorder, lineWidth: role == .secondary ? 1 : 0))
+                // Compact capsules are about 32 pt tall; pad the hit area to 44.
+                .padding(.vertical, isCompact ? 6 : 0)
+                .contentShape(.rect)
                 .scaleEffect(configuration.isPressed ? 0.96 : 1)
                 .animation(.jot, value: configuration.isPressed)
         }
@@ -194,7 +197,8 @@ struct KindNode: View {
         }
         .frame(width: 14, height: 14)
         .background(Color.jotBackground, in: .circle)
-        .accessibilityHidden(true)
+        // Rows combine their children, so VoiceOver reads "Reminder, Call the dentist".
+        .accessibilityLabel(kind.label)
     }
 }
 

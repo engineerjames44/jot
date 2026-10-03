@@ -141,62 +141,85 @@ struct ItemDetailView: View {
         )
     }
 
+    /// When and Repeat as two plain rows, like Settings: a label on the left,
+    /// the control on the right. Nothing scrolls sideways or gets cut off.
     private var whenCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("When", systemImage: "calendar")
-                    .font(.jotHeadline)
-                    .foregroundStyle(Color.jotTextPrimary)
-                Spacer()
-                if item.dueDate == nil {
-                    Button("Add time") { setDefaultDueDate() }
-                        .buttonStyle(.jotSecondary)
-                        .controlSize(.small)
-                } else {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Image(systemName: "calendar")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("When")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Text(item.dueDate.map { JotDate.short($0) } ?? "No time set")
+                        .font(.jotCaption)
+                        .foregroundStyle(Color.jotTextSecondary)
+                        .contentTransition(.numericText())
+                }
+                Spacer(minLength: 8)
+                if item.dueDate != nil {
                     Button {
                         withAnimation(animation) {
                             item.dueDate = nil
                             item.recurrence = nil
                         }
                     } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(Color.jotTextSecondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color.jotRaised, in: .circle)
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
                     }
                     .buttonStyle(.pressable)
                     .accessibilityLabel("Remove time")
+                } else {
+                    Button("Add time") { setDefaultDueDate() }
+                        .buttonStyle(.jotSecondary)
+                        .controlSize(.small)
                 }
             }
+            .padding(.vertical, 6)
 
+            // The picker gets its own line so it never squeezes the label.
             if let dueDate = Binding($item.dueDate) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(JotDate.short(dueDate.wrappedValue))
-                        .font(.system(.title2, design: .rounded, weight: .bold).monospacedDigit())
-                        .foregroundStyle(item.kind.color)
-                        .contentTransition(.numericText())
-                    DatePicker("Date and time", selection: dueDate)
-                        .labelsHidden()
-                        .tint(Color.jotAccent)
-                }
+                DatePicker("Date and time", selection: dueDate)
+                    .labelsHidden()
+                    .tint(Color.jotAccentText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 36)
+                    .padding(.bottom, 10)
+            }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Repeat")
-                        .font(.jotSection)
+            if item.dueDate != nil {
+                Rectangle().fill(Color.jotTextSecondary.opacity(0.15)).frame(height: 0.5)
+                    .padding(.leading, 36)
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.trianglehead.2.clockwise")
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(Color.jotTextSecondary)
-                    ChipPicker(
-                        options: [.init(value: Recurrence?.none, label: "Never")]
-                            + Recurrence.allCases.map { .init(value: Optional($0), label: $0.label) },
-                        selection: $item.recurrence,
-                        inset: JotMetrics.cardPadding
-                    )
-                    // Scroll edge to edge within the card.
-                    .padding(.horizontal, -JotMetrics.cardPadding)
+                        .frame(width: 24)
+                    Text("Repeat")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Spacer(minLength: 8)
+                    Picker("Repeat", selection: $item.recurrence) {
+                        Text("Never").tag(Recurrence?.none)
+                        ForEach(Recurrence.allCases) { Text($0.label).tag(Optional($0)) }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(Color.jotTextPrimary)
                 }
+                .frame(minHeight: 44)
+                .padding(.vertical, 6)
             }
         }
-        .jotCard()
+        .padding(.horizontal, JotMetrics.cardPadding)
+        .padding(.vertical, 6)
+        .background(Color.jotSurface, in: .rect(cornerRadius: JotMetrics.cornerRadius, style: .continuous))
     }
 
     private var completeButton: some View {
@@ -246,7 +269,7 @@ struct PlaybackCard: View {
                     .foregroundStyle(.white)
                     .contentTransition(.symbolEffect(.replace))
                     .frame(width: 48, height: 48)
-                    .background(Color.jotAccent, in: .circle)
+                    .background(Color.jotAccentText, in: .circle)
             }
             .buttonStyle(.pressable)
             .accessibilityLabel(playback.isPlaying ? "Pause recording" : "Play recording")

@@ -85,7 +85,7 @@ struct SmartSortingCard: View {
         switch engine {
         case .onDevice:
             if let reason = OnDeviceClassifier.unavailableReason {
-                return reason + " Until then, captures are saved as notes and sorted later."
+                return reason + " Until then, captures are saved as notes and sorted later, or you can choose Claude."
             }
             return "Apple's on-device model sorts what you say. Nothing leaves your iPhone, and it works offline."
         case .claude:

@@ -213,7 +213,10 @@ private struct CapturePanel: View {
                 FailureCard(message: message)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             case .idle:
-                EmptyView()
+                if let hint = capture.hint {
+                    HintCard(text: hint)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
         }
         .padding(.bottom, 8)
@@ -241,7 +244,7 @@ private struct ThinkingCard: View {
         PanelCard {
             Label("Sorting", systemImage: "sparkles")
                 .font(.jotSection)
-                .foregroundStyle(Color.jotAccent)
+                .foregroundStyle(Color.jotAccentText)
                 .shimmering()
 
             Text(transcript.isEmpty ? "Finishing up…" : "“\(transcript)”")
@@ -310,6 +313,20 @@ private struct ConfirmationCard: View {
         }
         .modifier(MatchedLanding(id: item.id, namespace: namespace, isSource: true))
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// A neutral nudge about how to use the orb. Not an error, so no warning sign.
+private struct HintCard: View {
+    let text: String
+
+    var body: some View {
+        PanelCard {
+            Label(text, systemImage: "hand.point.up.left.fill")
+                .font(.jotBody)
+                .foregroundStyle(Color.jotTextPrimary)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

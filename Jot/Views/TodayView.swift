@@ -68,6 +68,7 @@ struct TodayView: View {
     @State private var openRow: UUID?
     @State private var path: [JotItem] = []
     @State private var showingEarlier = false
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -156,36 +157,25 @@ struct TodayView: View {
                 if case .item(let item) = entry.source, ItemActions.canSnooze(item) { item } else { nil }
             }
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 12) {
-                    Button {
-                        withAnimation(animation) { showingEarlier.toggle() }
-                    } label: {
-                        HStack(spacing: 6) {
-                            Text("Still open from earlier")
-                                .font(.jotSection)
-                                .foregroundStyle(Color.jotTextPrimary)
-                            Text("\(content.earlier.count)")
-                                .font(.jotTimeSmall)
-                                .foregroundStyle(Color.jotTextSecondary)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color.jotTextSecondary)
-                                .rotationEffect(.degrees(showingEarlier ? 0 : -90))
+                // Side by side when it fits; stacked at large text sizes.
+                Group {
+                    if typeSize.isAccessibilitySize {
+                        VStack(alignment: .leading, spacing: 8) {
+                            earlierToggle(count: content.earlier.count)
+                            moveToTomorrow(movable)
                         }
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint(showingEarlier ? "Hides them" : "Shows them")
-
-                    Spacer(minLength: 0)
-
-                    if !movable.isEmpty {
-                        Button("Move to tomorrow") {
-                            withAnimation(animation) { ItemActions.moveToTomorrow(movable, in: modelContext) }
+                    } else {
+                        ViewThatFits(in: .horizontal) {
+                            HStack(spacing: 12) {
+                                earlierToggle(count: content.earlier.count)
+                                Spacer(minLength: 0)
+                                moveToTomorrow(movable)
+                            }
+                            VStack(alignment: .leading, spacing: 8) {
+                                earlierToggle(count: content.earlier.count)
+                                moveToTomorrow(movable)
+                            }
                         }
-                        .buttonStyle(.jotSecondary)
-                        .controlSize(.small)
-                        .fixedSize()
                     }
                 }
                 .padding(.horizontal, 4)
@@ -199,6 +189,43 @@ struct TodayView: View {
                     .transition(.opacity)
                 }
             }
+        }
+    }
+
+    private func earlierToggle(count: Int) -> some View {
+        Button {
+            withAnimation(animation) { showingEarlier.toggle() }
+        } label: {
+            HStack(spacing: 6) {
+                Text("Still open from earlier")
+                    .font(.jotSection)
+                    .foregroundStyle(Color.jotTextPrimary)
+                Text("\(count)")
+                    .font(.jotTimeSmall)
+                    .foregroundStyle(Color.jotTextSecondary)
+                Image(systemName: "chevron.down")
+                    .font(.footnote.weight(.bold))
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .rotationEffect(.degrees(showingEarlier ? 0 : -90))
+            }
+            .frame(minHeight: 44)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(showingEarlier ? "Hides them" : "Shows them")
+    }
+
+    @ViewBuilder
+    private func moveToTomorrow(_ movable: [JotItem]) -> some View {
+        if !movable.isEmpty {
+            Button("Move to tomorrow") {
+                withAnimation(animation) { ItemActions.moveToTomorrow(movable, in: modelContext) }
+            }
+            .buttonStyle(.jotSecondary)
+            .controlSize(.small)
+            // At accessibility sizes the label is wider than the screen, so it
+            // has to be allowed to wrap; otherwise the whole page overflows.
+            .fixedSize(horizontal: !typeSize.isAccessibilitySize, vertical: true)
         }
     }
 
@@ -362,6 +389,7 @@ private struct TodayHeader: View {
     let now: Date
     let content: TodayContent
     @AppStorage(UserProfile.nameKey, store: UserProfile.defaults) private var name = ""
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -395,7 +423,7 @@ private struct TodayHeader: View {
             (Text("Next: ").foregroundStyle(Color.jotTextSecondary)
                 + Text(next.title).foregroundStyle(Color.jotTextPrimary).fontWeight(.semibold)
                 + Text(" at \(time.formatted(date: .omitted, time: .shortened))").foregroundStyle(Color.jotTextSecondary))
-                .lineLimit(2)
+                .lineLimit(typeSize.isAccessibilitySize ? 5 : 2)
         } else if !content.earlier.isEmpty {
             Text("Nothing else scheduled. \(content.earlier.count) still open from earlier.")
                 .foregroundStyle(Color.jotTextSecondary)
@@ -431,14 +459,45 @@ private struct RailRow<Lines: View>: View {
     let railBelow: Bool
     @ViewBuilder let lines: Lines
 
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .footnote) private var timeColumn = TimelineLayout.timeColumn
+
     var body: some View {
+        if typeSize.isAccessibilitySize {
+            stacked
+        } else {
+            railed
+        }
+    }
+
+    /// Large text: no fixed column to squeeze into, so the time goes on its own line.
+    private var stacked: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if !timeLabel.isEmpty {
+                Text(timeLabel)
+                    .font(.jotReadout)
+                    .foregroundStyle(Color.jotTextSecondary)
+            }
+            HStack(alignment: .top, spacing: 10) {
+                KindNode(kind: kind)
+                    .padding(.top, 6)
+                lines
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.bottom, 18)
+        .contentShape(.rect)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var railed: some View {
         HStack(alignment: .top, spacing: 10) {
             Text(timeLabel)
                 .font(.jotReadout)
                 .foregroundStyle(Color.jotTextSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .frame(width: TimelineLayout.timeColumn, alignment: .trailing)
+                .frame(width: timeColumn, alignment: .trailing)
                 .padding(.top, 2)
 
             ZStack(alignment: .top) {
@@ -459,6 +518,7 @@ private struct RailRow<Lines: View>: View {
         }
         .fixedSize(horizontal: false, vertical: true)
         .contentShape(.rect)
+        .accessibilityElement(children: .combine)
     }
 
     private var timeLabel: String {
@@ -474,6 +534,8 @@ private struct RailRow<Lines: View>: View {
 private struct NowLine: View {
     let now: Date
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
+    @ScaledMetric(relativeTo: .footnote) private var timeColumn = TimelineLayout.timeColumn
     @State private var pulsing = false
 
     var body: some View {
@@ -481,10 +543,11 @@ private struct NowLine: View {
             Text(now.formatted(date: .omitted, time: .shortened))
                 .font(.jotReadout)
                 .fontWeight(.semibold)
-                .foregroundStyle(Color.jotAccent)
+                .foregroundStyle(Color.jotAccentText)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .frame(width: TimelineLayout.timeColumn, alignment: .trailing)
+                .frame(width: typeSize.isAccessibilitySize ? nil : timeColumn, alignment: .trailing)
+                .fixedSize()
 
             ZStack {
                 Circle()
@@ -506,7 +569,7 @@ private struct NowLine: View {
                 ))
                 .frame(height: 1.5)
         }
-        .frame(height: 24)
+        .frame(minHeight: 24)
         .padding(.bottom, 14)
         .accessibilityElement()
         .accessibilityLabel("Now, \(now.formatted(date: .omitted, time: .shortened))")
@@ -597,8 +660,48 @@ private extension String {
 
 private struct CalendarAccessCard: View {
     @Environment(CalendarService.self) private var calendar
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
+        // At accessibility sizes the button goes under the words, or the card
+        // grows wider than the screen.
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 12) {
+                words
+                allowButton
+            }
+            .jotCard()
+        } else {
+            row
+        }
+    }
+
+    private var words: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Bring in your calendar")
+                .font(.jotHeadline)
+                .foregroundStyle(Color.jotTextPrimary)
+            Text(calendar.authorization == .notDetermined
+                 ? "See your events on the timeline. Jot never changes them."
+                 : "Calendar access is off. Turn it on in the Settings app.")
+                .font(.jotCaption)
+                .foregroundStyle(Color.jotTextSecondary)
+        }
+    }
+
+    @ViewBuilder
+    private var allowButton: some View {
+        if calendar.authorization == .notDetermined {
+            Button("Allow") {
+                Task { await calendar.requestAccess() }
+            }
+            .buttonStyle(.jotSecondary)
+            .controlSize(.small)
+            .fixedSize()
+        }
+    }
+
+    private var row: some View {
         HStack(spacing: 14) {
             Image(systemName: "calendar")
                 .font(.system(size: 18, weight: .semibold))

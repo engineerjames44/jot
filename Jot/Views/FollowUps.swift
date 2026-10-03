@@ -73,7 +73,7 @@ struct ParentLink: View {
             NavigationLink(value: parent) {
                 Label("Follow-up to \(parent.title)", systemImage: "arrowshape.turn.up.left")
                     .font(.jotCaption.weight(.semibold))
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                     .lineLimit(1)
             }
         }

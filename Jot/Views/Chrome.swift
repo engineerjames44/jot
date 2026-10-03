@@ -30,6 +30,7 @@ struct ProfileBadge: View {
             .foregroundStyle(Color.jotTextPrimary)
             .frame(width: 38, height: 38)
             .background(Color.jotRaised, in: .circle)
+            .frame(width: 44, height: 44)
             .contentShape(.circle)
         }
         .buttonStyle(.pressable)
@@ -83,6 +84,11 @@ struct BottomBar: View {
             .contentShape(.rect)
         }
         .buttonStyle(.pressable)
+        // Like the system tab bar: labels stay compact, and a long press shows
+        // them enlarged for people using large text.
+        .accessibilityShowsLargeContentViewer {
+            Label(title, systemImage: symbol)
+        }
         .accessibilityAddTraits(selected ? [.isSelected] : [])
         .sensoryFeedback(.selection, trigger: selected) { _, now in now }
     }
@@ -120,7 +126,7 @@ struct CaptureStage: View {
                     }
 
                     Text(capture.liveTranscript.isEmpty ? "Say what's on your mind." : capture.liveTranscript)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.system(.largeTitle, design: .rounded, weight: .bold))
                         .tracking(-0.5)
                         .foregroundStyle(capture.liveTranscript.isEmpty ? .white.opacity(0.4) : .white)
                         .lineLimit(7)

@@ -86,10 +86,10 @@ enum ReminderScheduler {
             .map(\.identifier)
             .filter { $0 != MorningBrief.previewIdentifier }
         center.removePendingNotificationRequests(withIdentifiers: stale)
-        // Don't ask before onboarding has explained why.
-        let mayPrompt = UserDefaults.standard.bool(forKey: "JotHasOnboarded")
+        // Never prompts: refills run on launch, where a system prompt has no
+        // context. Jot asks right after a timed item is captured, or in onboarding.
         MorningBrief.scheduleBackgroundRefresh(now: now)
-        guard !(upcoming.isEmpty && briefs.isEmpty), await ensureAuthorized(center, mayPrompt: mayPrompt) else { return }
+        guard !(upcoming.isEmpty && briefs.isEmpty), await ensureAuthorized(center, mayPrompt: false) else { return }
 
         for brief in briefs {
             try? await center.add(brief)

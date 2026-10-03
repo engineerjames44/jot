@@ -223,7 +223,7 @@ struct SettingsView: View {
             Spacer(minLength: 4)
             Toggle("Develop tools", isOn: $devModeEnabled)
                 .labelsHidden()
-                .tint(Color.jotAccent)
+                .tint(Color.jotAccentText)
         }
         .jotCard()
         .overlay(alignment: .bottomTrailing) {
@@ -318,7 +318,7 @@ private struct MorningBriefCard: View {
                 Spacer()
                 Toggle("Daily brief", isOn: $isEnabled)
                     .labelsHidden()
-                    .tint(Color.jotAccent)
+                    .tint(Color.jotAccentText)
             }
 
             if isEnabled {
@@ -329,7 +329,7 @@ private struct MorningBriefCard: View {
                     Spacer()
                     DatePicker("Deliver at", selection: time, displayedComponents: .hourAndMinute)
                         .labelsHidden()
-                        .tint(Color.jotAccent)
+                        .tint(Color.jotAccentText)
                 }
 
                 BriefPreview(summary: preview)
@@ -373,7 +373,11 @@ private struct MorningBriefCard: View {
 
     private func resync() {
         previewSent = false
-        Task { await ReminderScheduler.refill(using: modelContext) }
+        Task {
+            // Turning the brief on is the moment to ask for notifications.
+            if isEnabled { _ = await ReminderScheduler.ensureAuthorized() }
+            await ReminderScheduler.refill(using: modelContext)
+        }
     }
 }
 
