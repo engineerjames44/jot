@@ -18,7 +18,7 @@ enum SharedStore {
     /// that exists only so the app can launch and explain. Nothing may write to it.
     private static let loaded: (container: ModelContainer, openError: String?) = {
         migrateLegacyStoreIfNeeded()
-        let schema = Schema(versionedSchema: JotSchemaV1.self)
+        let schema = Schema(versionedSchema: JotSchemaV2.self)
         do {
             let container = try ModelContainer(
                 for: schema,
