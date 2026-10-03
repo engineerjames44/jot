@@ -3,7 +3,7 @@ import Foundation
 /// Sorts a transcript through Jot's server, which holds the prompt, the model,
 /// and the API key (ADR-002). Users never need a key of their own.
 struct ProxyClassifier: Sendable {
-    static let defaultBaseURL = URL(string: "https://jamescronin.dev")!
+    static let defaultBaseURL = URL(string: "https://www.jamescronin.dev")!
 
     var baseURL: URL = Self.configuredBaseURL
     var session: URLSession = .shared

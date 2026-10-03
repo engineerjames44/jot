@@ -4,7 +4,7 @@ import SwiftUI
 /// leaves the device (App Review guideline 5.1.2(i)); off until turned on.
 enum SmartSorting {
     static let key = "JotSmartSortingAllowed"
-    static let privacyPolicy = URL(string: "https://jamescronin.dev/jot/privacy")!
+    static let privacyPolicy = URL(string: "https://www.jamescronin.dev/jot/privacy")!
 
     static var isAllowed: Bool { UserDefaults.standard.bool(forKey: key) }
 }

@@ -1,7 +1,7 @@
 # Status — Jot
 
 **Feature:** app-launch-readiness · **Branch:** app-launch-readiness
-**Phase:** Implementation — 1A, 1B, 2, 3 done; Phase 4 (subscriptions) needs James's decisions
+**Phase:** 1A–3 done; server deployed 2026-10-03; subscriptions dropped (portfolio project); device testing next
 **Updated:** 2026-10-03
 
 ## Phases
@@ -14,7 +14,7 @@
 - [x] 1B Reliability (interruption paths: verify on device)
 - [x] 2 Launch requirements (ADR-002) — site branch `jot-classify-api` needs deploy + env vars
 - [x] 3 UX gaps (Add to Calendar deferred) — ADR-004
-- [ ] 4 Subscriptions (ADR-003 pending)
+- [—] 4 Subscriptions — dropped (portfolio project)
 - [~] Verification: automated + simulator done (see reviews/); device checklist pending
 - [ ] Delivery (TestFlight)
 
