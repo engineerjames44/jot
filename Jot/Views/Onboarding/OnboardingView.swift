@@ -222,6 +222,7 @@ struct PermissionRow: View {
     }
 }
 
+@MainActor
 func openSystemSettings() {
     #if os(iOS)
     if let url = URL(string: UIApplication.openSettingsURLString) {
