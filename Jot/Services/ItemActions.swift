@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import SwiftUI
 import WidgetKit
 
 /// Quick snooze choices offered from swipe actions.
@@ -65,8 +66,10 @@ enum ItemActions {
         commit(context)
     }
 
+    /// Deletes now; the item can be brought back from the Undo toast for a few
+    /// seconds, after which its recording is removed too.
     static func delete(_ item: JotItem, in context: ModelContext) {
-        AudioStore.remove(item.audioFileName)
+        withAnimation(.jot) { RecentlyDeleted.shared.record(item, in: context) }
         context.delete(item)
         commit(context)
     }

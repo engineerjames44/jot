@@ -102,7 +102,7 @@ struct ItemDetailView: View {
                         }
                     }
                 } message: {
-                    Text("The recording is deleted too.")
+                    Text("You can undo this for a few seconds.")
                 }
             }
         }

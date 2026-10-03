@@ -55,6 +55,11 @@ struct RootView: View {
                     .environment(\.isActiveTab, screen == .settings)
             }
         }
+        .overlay(alignment: .bottom) {
+            // Above the tab bar and the record orb.
+            UndoToast()
+                .padding(.bottom, 150)
+        }
         .environment(\.captureNamespace, captureNamespace)
         .environment(orbLocator)
         .overlay {
