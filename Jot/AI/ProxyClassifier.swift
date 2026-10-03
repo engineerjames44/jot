@@ -82,6 +82,7 @@ enum SortingError: LocalizedError, Equatable {
     case dailyLimit
     case unavailable
     case unreadable
+    case notAllowed
 
     init(status: Int, code: String?) {
         switch (status, code) {
@@ -99,6 +100,7 @@ enum SortingError: LocalizedError, Equatable {
         case .dailyLimit: "Jot has reached today's sorting limit."
         case .unavailable: "Jot's sorting is unavailable right now."
         case .unreadable: "Jot couldn't work out what kind of item this is."
+        case .notAllowed: "Smart sorting is off. You can turn it on in Settings."
         }
     }
 
@@ -121,6 +123,8 @@ enum InstallID {
 /// The classifier captures and Siri use.
 enum Classifier {
     static func classify(_ transcript: String) async throws -> ClassifiedItem {
+        // Nothing leaves the device without permission.
+        guard SmartSorting.isAllowed else { throw SortingError.notAllowed }
         #if DEBUG
         // A personal key in Settings keeps calling Claude directly, for experiments.
         if KeychainStore.apiKey()?.isEmpty == false {

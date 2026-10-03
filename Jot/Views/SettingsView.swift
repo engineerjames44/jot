@@ -33,6 +33,8 @@ struct SettingsView: View {
                     section("Claude") { apiKeyCard }
                     #endif
 
+                    section("Smart sorting") { SmartSortingCard() }
+
                     section("Morning brief") { MorningBriefCard() }
 
                     section("Permissions") {

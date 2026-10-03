@@ -37,7 +37,7 @@ struct OnboardingView: View {
                 IntroPage(
                     step: "02",
                     title: "Just say it",
-                    message: "Talk like you would to a friend. Your words are transcribed right on your iPhone.",
+                    message: "Talk like you would to a friend. Your voice is turned into words right on your iPhone.",
                     isActive: page == 1
                 ) { SpeakIllustration(isActive: $0) }
                 .tag(1)
@@ -149,11 +149,14 @@ private struct PermissionsPage: View {
                     .foregroundStyle(Color.jotTextSecondary)
                     .padding(.bottom, 8)
 
+                SmartSortingCard()
+                    .staggeredAppear(0)
+
                 ForEach(Array(PermissionCenter.Kind.allCases.enumerated()), id: \.element) { index, kind in
                     PermissionRow(kind: kind, status: permissions.status(kind)) {
                         Task { await permissions.request(kind, calendar: calendar) }
                     }
-                    .staggeredAppear(index)
+                    .staggeredAppear(index + 1)
                 }
             }
             .padding(.horizontal, 24)
