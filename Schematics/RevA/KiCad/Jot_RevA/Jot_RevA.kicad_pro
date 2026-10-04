@@ -661,7 +661,7 @@
         "uuid": "61747270-9f90-47b6-9c50-5ea1f41f259a"
       }
     ],
-    "used_designators": "U1-2,Y1,R1-3,C6-10,#PWR1-8,#PWR26-33,J1,#FLG3",
+    "used_designators": "#FLG3,MK1,J1,Q1,#PWR1-8,#PWR26-35,C6-10,R1-3,Y1,U1-2",
     "variants": []
   },
   "sheets": [
@@ -680,6 +680,10 @@
     [
       "0b47c322-4767-4ab6-bf09-bf78d39931f5",
       "Storage"
+    ],
+    [
+      "9e187e1f-036e-4011-8d99-f7d1cc29b987",
+      "Audio"
     ]
   ],
   "text_variables": {},
