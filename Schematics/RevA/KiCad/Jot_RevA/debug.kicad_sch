@@ -4,6 +4,13 @@
 	(generator_version "10.0")
 	(uuid "81a8ebe6-f857-4794-8d58-bba04cb60e8b")
 	(paper "A4")
+	(title_block
+		(title "Jot Rev A: Debug")
+		(date "2026-10-04")
+		(rev "A")
+		(company "James Donal Cronin")
+		(comment 1 "JOT-HW-001: handheld push-to-talk voice capture")
+	)
 	(lib_symbols
 		(symbol "Connector:TestPoint"
 			(pin_numbers

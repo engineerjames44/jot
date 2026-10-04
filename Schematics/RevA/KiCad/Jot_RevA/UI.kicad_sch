@@ -9,6 +9,7 @@
 		(date "2026-10-04")
 		(rev "A")
 		(company "James Donal Cronin")
+		(comment 1 "JOT-HW-001: handheld push-to-talk voice capture")
 	)
 	(lib_symbols
 		(symbol "Device:Buzzer"
