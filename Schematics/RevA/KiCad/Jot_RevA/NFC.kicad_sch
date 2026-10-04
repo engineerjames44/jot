@@ -797,7 +797,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "Antenna_Loop"
+		(property "Value" "NFC coil (PCB)"
 			(at 185.42 92.7099 90)
 			(show_name no)
 			(do_not_autoplace no)
