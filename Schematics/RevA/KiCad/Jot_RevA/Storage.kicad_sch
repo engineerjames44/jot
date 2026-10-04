@@ -1060,7 +1060,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
+		(property "Footprint" ""
 			(at 169.8752 90.17 0)
 			(hide yes)
 			(show_name no)
