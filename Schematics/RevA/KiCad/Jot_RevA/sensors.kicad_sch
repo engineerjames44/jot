@@ -1,0 +1,14 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "88e90339-bb81-4291-be0e-5cbfb6013682")
+	(paper "A4")
+	(title_block
+		(title "Jot Rev A: Sensors")
+		(date "2026-10-04")
+		(rev "A")
+		(company "James Donal Cronin")
+	)
+	(lib_symbols)
+)

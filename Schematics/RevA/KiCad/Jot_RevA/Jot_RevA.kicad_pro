@@ -661,7 +661,7 @@
         "uuid": "61747270-9f90-47b6-9c50-5ea1f41f259a"
       }
     ],
-    "used_designators": "#FLG3,MK1,J1,Q1,#PWR1-8,#PWR26-35,C6-10,R1-3,Y1,U1-2",
+    "used_designators": "U1-2,Y1,R1-3,C6-10,Q1,#PWR1-8,#PWR26-35,J1,MK1,#FLG3",
     "variants": []
   },
   "sheets": [
@@ -684,6 +684,10 @@
     [
       "9e187e1f-036e-4011-8d99-f7d1cc29b987",
       "Audio"
+    ],
+    [
+      "320e6f66-4d93-41ba-b8dd-674d1042cb0a",
+      "Sensors"
     ]
   ],
   "text_variables": {},
