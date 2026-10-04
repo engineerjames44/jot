@@ -29,32 +29,34 @@ struct RootView: View {
     @State private var orbLocator = OrbLocator()
     @AppStorage(SmartSorting.key) private var smartSortingAllowed = false
     @State private var showingLaunch = true
+    @State private var showingSettings = false
+    @AppStorage(Appearance.key) private var appearance = Appearance.system
 
     var body: some View {
         @Bindable var capture = capture
 
+        // The system tab bar is hidden: each screen draws the bottom bar, with
+        // the record orb between Today and Inbox. Settings opens from your initial.
         TabView(selection: $screen) {
             Tab("Today", systemImage: "sun.max.fill", value: .today) {
                 TodayView()
                     .environment(\.isActiveTab, screen == .today)
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab("Inbox", systemImage: "tray.full.fill", value: .inbox) {
                 InboxView()
                     .environment(\.isActiveTab, screen == .inbox)
-            }
-            #if DEBUG
-            if devModeEnabled {
-                Tab("Develop", systemImage: "hammer.fill", value: .develop) {
-                    DevelopView()
-                        .environment(\.isActiveTab, screen == .develop)
-                }
-            }
-            #endif
-            Tab("Settings", systemImage: "gearshape.fill", value: .settings) {
-                SettingsView()
-                    .environment(\.isActiveTab, screen == .settings)
+                    .toolbar(.hidden, for: .tabBar)
             }
         }
+        .environment(\.currentScreen, screen)
+        .environment(\.selectScreen) { selected in screen = selected }
+        .environment(\.openSettings) { showingSettings = true }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+                .preferredColorScheme(appearance.colorScheme)
+        }
+        .preferredColorScheme(appearance.colorScheme)
         .overlay(alignment: .bottom) {
             // Above the tab bar and the record orb.
             UndoToast()
@@ -69,7 +71,7 @@ struct RootView: View {
                 }
             }
         }
-        .tint(Color.jotAccent)
+        .tint(Color.jotAccentText)
         .sensoryFeedback(trigger: capture.feedbackTick) { _, _ in capture.feedback.sensory }
         .sheet(item: $capture.editingItem) { item in
             NavigationStack {
@@ -92,9 +94,6 @@ struct RootView: View {
         )) { target in
             QuickDevNoteSheet(screen: target.screen)
         }
-        .onChange(of: devModeEnabled) { _, enabled in
-            if !enabled, screen == .develop { screen = .settings }
-        }
         #endif
         .fullScreenCover(isPresented: Binding(get: { !hasOnboarded }, set: { hasOnboarded = !$0 })) {
             OnboardingView { hasOnboarded = true }
@@ -106,6 +105,16 @@ struct RootView: View {
             // Turning sorting on sorts what was kept as notes while it was off.
             if allowed { Task { await SortLater.retryPending(in: modelContext) } }
         }
+        #if DEBUG
+        .onAppear {
+            // -JotStartTab inbox|settings|develop: open a tab directly, for screenshots.
+            switch UserDefaults.standard.string(forKey: "JotStartTab") {
+            case "inbox": screen = .inbox
+            case "settings": showingSettings = true
+            default: break
+            }
+        }
+        #endif
         .onChange(of: scenePhase, initial: true) { _, phase in
             guard phase == .active else { return }
             #if DEBUG

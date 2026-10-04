@@ -1,13 +1,13 @@
 import SwiftData
 import SwiftUI
 
-/// The record orb, pinned to the bottom of a screen, with the live panel floating above it.
+/// The bottom bar (Today, the record orb, Inbox), with the result panel floating above it.
 struct CaptureDock: View {
     @Environment(CaptureController.self) private var capture
     @Environment(\.isActiveTab) private var isActiveTab
 
     var body: some View {
-        CaptureOrb()
+        BottomBar()
             .frame(maxWidth: .infinity)
             .padding(.bottom, 4)
             .overlay(alignment: .top) {
@@ -188,7 +188,8 @@ private struct RadialWaveform: View {
 
 // MARK: - Panel
 
-/// Live words while recording, a shimmer while thinking, then the confirmation card.
+/// A shimmer while thinking, then the confirmation card. (While recording, the
+/// words fill the screen on the capture stage instead.)
 private struct CapturePanel: View {
     @Environment(CaptureController.self) private var capture
 
@@ -196,8 +197,7 @@ private struct CapturePanel: View {
         Group {
             switch capture.phase {
             case .starting, .recording:
-                LiveTranscriptCard()
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                EmptyView()
             case .transcribing, .classifying:
                 ThinkingCard(transcript: capture.liveTranscript)
                     .transition(.opacity)
@@ -213,7 +213,10 @@ private struct CapturePanel: View {
                 FailureCard(message: message)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             case .idle:
-                EmptyView()
+                if let hint = capture.hint {
+                    HintCard(text: hint)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
         }
         .padding(.bottom, 8)
@@ -234,46 +237,14 @@ private struct PanelCard<Content: View>: View {
     }
 }
 
-private struct LiveTranscriptCard: View {
-    @Environment(CaptureController.self) private var capture
-
-    var body: some View {
-        PanelCard {
-            HStack(spacing: 8) {
-                KindDot(color: .jotAccent, size: 8, glows: true)
-                Text("LISTENING")
-                    .font(.jotLabel)
-                    .tracking(1.2)
-                    .foregroundStyle(Color.jotAccent)
-                Spacer()
-                if case .recording(let since) = capture.phase {
-                    Text(timerInterval: since...Date.distantFuture, countsDown: false)
-                        .font(.jotTimeSmall)
-                        .foregroundStyle(Color.jotTextSecondary)
-                }
-            }
-
-            Text(capture.liveTranscript.isEmpty ? "Say what's on your mind…" : capture.liveTranscript)
-                .font(.system(.title3, design: .rounded, weight: .semibold))
-                .foregroundStyle(capture.liveTranscript.isEmpty ? Color.jotTextSecondary : Color.jotTextPrimary)
-                .lineLimit(4)
-                .truncationMode(.head)
-                .contentTransition(.interpolate)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .accessibilityElement(children: .combine)
-    }
-}
-
 private struct ThinkingCard: View {
     let transcript: String
 
     var body: some View {
         PanelCard {
-            Label("THINKING", systemImage: "sparkles")
-                .font(.jotLabel)
-                .tracking(1.2)
-                .foregroundStyle(Color.jotAccent)
+            Label("Sorting", systemImage: "sparkles")
+                .font(.jotSection)
+                .foregroundStyle(Color.jotAccentText)
                 .shimmering()
 
             Text(transcript.isEmpty ? "Finishing up…" : "“\(transcript)”")
@@ -342,6 +313,20 @@ private struct ConfirmationCard: View {
         }
         .modifier(MatchedLanding(id: item.id, namespace: namespace, isSource: true))
         .accessibilityElement(children: .contain)
+    }
+}
+
+/// A neutral nudge about how to use the orb. Not an error, so no warning sign.
+private struct HintCard: View {
+    let text: String
+
+    var body: some View {
+        PanelCard {
+            Label(text, systemImage: "hand.point.up.left.fill")
+                .font(.jotBody)
+                .foregroundStyle(Color.jotTextPrimary)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

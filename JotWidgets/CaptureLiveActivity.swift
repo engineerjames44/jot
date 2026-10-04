@@ -161,9 +161,8 @@ private struct LockScreenCapture: View {
             PhaseOrb(phase: state.phase, size: 44)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(state.phase.headline.uppercased())
-                        .font(.jotLabel)
-                        .tracking(1.2)
+                    Text(state.phase.headline)
+                        .font(.jotSection)
                         .foregroundStyle(state.phase.tint)
                     Spacer()
                     PhaseTrailing(state: state)

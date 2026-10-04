@@ -10,6 +10,10 @@ struct SettingsView: View {
     @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
     #endif
 
+    @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    @State private var showingDevelop = false
+    #endif
     @State private var permissions = PermissionCenter()
     @State private var keyInput = ""
     @State private var savedKeySuffix: String?
@@ -25,7 +29,9 @@ struct SettingsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    header
+                    section("You") { NameCard() }
+
+                    section("Appearance") { AppearanceCard() }
 
                     #if DEBUG
                     // Release builds sort through Jot's server; a personal key is
@@ -33,9 +39,11 @@ struct SettingsView: View {
                     section("Claude") { apiKeyCard }
                     #endif
 
-                    section("Smart sorting") { SmartSortingCard() }
+                    section("Sorting") { SmartSortingCard() }
 
                     section("Morning brief") { MorningBriefCard() }
+
+                    section("Evening check-in") { EveningNudgeCard() }
 
                     section("Permissions") {
                         VStack(spacing: 10) {
@@ -60,7 +68,15 @@ struct SettingsView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .background(Color.jotBackground.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            #if DEBUG
+            .sheet(isPresented: $showingDevelop) { DevelopView() }
+            #endif
             .onAppear(perform: loadKey)
             .task { await permissions.refresh() }
             .onChange(of: scenePhase) { _, phase in
@@ -68,19 +84,6 @@ struct SettingsView: View {
                 if phase == .active { Task { await permissions.refresh() } }
             }
         }
-    }
-
-    // MARK: Header
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Wordmark(size: 56)
-            Text("Hold. Speak. Done.")
-                .font(.jotHeadline)
-                .foregroundStyle(Color.jotTextSecondary)
-        }
-        .padding(.top, 20)
-        .accessibilityElement(children: .combine)
     }
 
     private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
@@ -211,20 +214,28 @@ struct SettingsView: View {
                 .frame(width: 44, height: 44)
                 .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
-                Text("Develop tab")
+                Text("Develop tools")
                     .font(.jotHeadline)
                     .foregroundStyle(Color.jotTextPrimary)
-                Text("Record change notes about Jot and export them. Shake anywhere to add one.")
+                Text("Record change notes about Jot and export them. Shake anywhere to add one.\n")
                     .font(.jotCaption)
                     .foregroundStyle(Color.jotTextSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
-            Toggle("Develop tab", isOn: $devModeEnabled)
+            Toggle("Develop tools", isOn: $devModeEnabled)
                 .labelsHidden()
-                .tint(Color.jotAccent)
+                .tint(Color.jotAccentText)
         }
         .jotCard()
+        .overlay(alignment: .bottomTrailing) {
+            if devModeEnabled {
+                Button("Open") { showingDevelop = true }
+                    .buttonStyle(.jotSecondary)
+                    .controlSize(.small)
+                    .padding(12)
+            }
+        }
     }
     #endif
 
@@ -232,7 +243,7 @@ struct SettingsView: View {
 
     private var aboutCard: some View {
         VStack(spacing: 0) {
-            aboutRow("Sorting", value: "Claude Haiku 4.5", symbol: "sparkles")
+            aboutRow("Sorting", value: SmartSorting.engineDescription, symbol: "sparkles")
             Divider().overlay(Color.jotBorder)
             aboutRow("Transcription", value: "On-device", symbol: "waveform")
             Divider().overlay(Color.jotBorder)
@@ -309,7 +320,7 @@ private struct MorningBriefCard: View {
                 Spacer()
                 Toggle("Daily brief", isOn: $isEnabled)
                     .labelsHidden()
-                    .tint(Color.jotAccent)
+                    .tint(Color.jotAccentText)
             }
 
             if isEnabled {
@@ -320,7 +331,7 @@ private struct MorningBriefCard: View {
                     Spacer()
                     DatePicker("Deliver at", selection: time, displayedComponents: .hourAndMinute)
                         .labelsHidden()
-                        .tint(Color.jotAccent)
+                        .tint(Color.jotAccentText)
                 }
 
                 BriefPreview(summary: preview)
@@ -364,7 +375,11 @@ private struct MorningBriefCard: View {
 
     private func resync() {
         previewSent = false
-        Task { await ReminderScheduler.refill(using: modelContext) }
+        Task {
+            // Turning the brief on is the moment to ask for notifications.
+            if isEnabled { _ = await ReminderScheduler.ensureAuthorized() }
+            await ReminderScheduler.refill(using: modelContext)
+        }
     }
 }
 
@@ -384,9 +399,8 @@ private struct BriefPreview: View {
                     Text(summary.title)
                         .font(.subheadline.weight(.semibold))
                     Spacer()
-                    Text("PREVIEW")
-                        .font(.jotLabel)
-                        .tracking(1)
+                    Text("Preview")
+                        .font(.jotSection)
                         .foregroundStyle(Color.jotTextSecondary)
                 }
                 Text(summary.subtitle)
@@ -402,5 +416,122 @@ private struct BriefPreview: View {
         .background(Color.jotRaised, in: .rect(cornerRadius: 18, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Preview: \(summary.title). \(summary.subtitle). \(summary.body)")
+    }
+}
+
+/// The name Jot greets you by on Today and in the morning brief.
+private struct NameCard: View {
+    @AppStorage(UserProfile.nameKey, store: UserProfile.defaults) private var name = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "hand.wave.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.jotAccent)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Your name")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                TextField("Add a name to be greeted by", text: $name)
+                    .font(.jotBody)
+                    .textContentType(.givenName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+                    .focused($focused)
+                    .onSubmit { name = UserProfile.cleaned(name) }
+            }
+        }
+        .jotCard()
+        .onChange(of: focused) { _, isFocused in
+            if !isFocused { name = UserProfile.cleaned(name) }
+        }
+    }
+}
+
+/// Light, dark, or whatever the iPhone is set to.
+enum Appearance: String, CaseIterable, Identifiable {
+    case system, light, dark
+    static let key = "JotAppearance"
+
+    var id: String { rawValue }
+    var label: String { self == .system ? "Automatic" : rawValue.capitalized }
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .light: .light
+        case .dark: .dark
+        }
+    }
+}
+
+private struct AppearanceCard: View {
+    @AppStorage(Appearance.key) private var appearance = Appearance.system
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 14) {
+                Image(systemName: appearance == .dark ? "moon.fill" : appearance == .light ? "sun.max.fill" : "circle.lefthalf.filled")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Color.jotTextPrimary)
+                    .frame(width: 44, height: 44)
+                    .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+                    .contentTransition(.symbolEffect(.replace))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Appearance")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Text(appearance == .system ? "Follows your iPhone's setting" : "Always \(appearance.rawValue)")
+                        .font(.jotCaption)
+                        .foregroundStyle(Color.jotTextSecondary)
+                }
+            }
+            Picker("Appearance", selection: $appearance) {
+                ForEach(Appearance.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+        }
+        .jotCard()
+        .sensoryFeedback(.selection, trigger: appearance)
+    }
+}
+
+/// The 8 PM nudge about what's still open, with Move to tomorrow on it.
+private struct EveningNudgeCard: View {
+    @Environment(\.modelContext) private var modelContext
+    @AppStorage(EveningNudge.Keys.enabled) private var isEnabled = true
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "moon.stars.fill")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Color.jotNote)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Evening check-in")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                Text("At 8:00 PM, if anything's still open, with a button to move it to tomorrow")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Toggle("Evening check-in", isOn: $isEnabled)
+                .labelsHidden()
+                .tint(Color.jotAccentText)
+        }
+        .jotCard()
+        .onChange(of: isEnabled) { _, on in
+            Task {
+                if on { _ = await ReminderScheduler.ensureAuthorized() }
+                await ReminderScheduler.refill(using: modelContext)
+            }
+        }
     }
 }

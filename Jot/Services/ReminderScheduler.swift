@@ -69,7 +69,8 @@ enum ReminderScheduler {
             }
             .sorted { $0.1 < $1.1 }
 
-        let briefs = MorningBrief.requests(using: context, now: now)
+        // Briefs and evening nudges get their slots first; reminders fill the rest.
+        let briefs = MorningBrief.requests(using: context, now: now) + EveningNudge.requests(using: context, now: now)
         let upcoming = reminders.prefix(pendingLimit - briefs.count).map { item, fireDate in
             Pending(
                 id: item.id.uuidString,
@@ -86,10 +87,10 @@ enum ReminderScheduler {
             .map(\.identifier)
             .filter { $0 != MorningBrief.previewIdentifier }
         center.removePendingNotificationRequests(withIdentifiers: stale)
-        // Don't ask before onboarding has explained why.
-        let mayPrompt = UserDefaults.standard.bool(forKey: "JotHasOnboarded")
+        // Never prompts: refills run on launch, where a system prompt has no
+        // context. Jot asks right after a timed item is captured, or in onboarding.
         MorningBrief.scheduleBackgroundRefresh(now: now)
-        guard !(upcoming.isEmpty && briefs.isEmpty), await ensureAuthorized(center, mayPrompt: mayPrompt) else { return }
+        guard !(upcoming.isEmpty && briefs.isEmpty), await ensureAuthorized(center, mayPrompt: false) else { return }
 
         for brief in briefs {
             try? await center.add(brief)
@@ -189,6 +190,15 @@ final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate, S
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse
     ) async {
+        // The evening nudge isn't about one item.
+        if response.notification.request.content.categoryIdentifier == EveningNudge.categoryID {
+            guard response.actionIdentifier == EveningNudge.moveAction else { return }
+            await MainActor.run {
+                guard SharedStore.canWrite else { return }
+                EveningNudge.moveStillOpenToTomorrow(in: SharedStore.container.mainContext)
+            }
+            return
+        }
         guard let raw = response.notification.request.content.userInfo["itemID"] as? String,
               let id = UUID(uuidString: raw)
         else { return }

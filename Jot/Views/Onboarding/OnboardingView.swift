@@ -1,13 +1,26 @@
 import SwiftUI
 
-/// Three short animated pages (hold → speak → done), then permissions,
-/// each explained before the system asks.
+/// Three short animated pages (hold → speak → done), the name to greet you by,
+/// then permissions, each explained before the system asks.
 struct OnboardingView: View {
     var onFinish: () -> Void
 
     @Environment(\.jotAnimation) private var animation
     @State private var page = 0
-    private let pageCount = 4
+    /// True while a page is sliding in. The pager drops a selection change made
+    /// mid-slide, which left the dots and the page out of step and skipped pages.
+    @State private var isTurning = false
+    private let pageCount = 5
+
+    private func turn(to target: Int) {
+        guard !isTurning, target != page else { return }
+        isTurning = true
+        withAnimation(animation) {
+            page = target
+        } completion: {
+            isTurning = false
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -15,9 +28,7 @@ struct OnboardingView: View {
                 Wordmark(size: 34)
                 Spacer()
                 if page < pageCount - 1 {
-                    Button("Skip") {
-                        withAnimation(animation) { page = pageCount - 1 }
-                    }
+                    Button("Skip") { turn(to: pageCount - 1) }
                     .font(.jotHeadline)
                     .foregroundStyle(Color.jotTextSecondary)
                 }
@@ -50,8 +61,11 @@ struct OnboardingView: View {
                 ) { DoneIllustration(isActive: $0) }
                 .tag(2)
 
+                NamePage { turn(to: 4) }
+                .tag(3)
+
                 PermissionsPage()
-                    .tag(3)
+                    .tag(4)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
 
@@ -60,8 +74,10 @@ struct OnboardingView: View {
 
                 Button {
                     if page < pageCount - 1 {
-                        withAnimation(animation) { page += 1 }
+                        turn(to: page + 1)
                     } else {
+                        // The brief needs notifications; ask now, while the choice is fresh.
+                        if MorningBrief.isEnabled || EveningNudge.isEnabled { Task { _ = await ReminderScheduler.ensureAuthorized() } }
                         onFinish()
                     }
                 } label: {
@@ -107,7 +123,7 @@ private struct IntroPage<Illustration: View>: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text(step)
                     .font(.jotTime)
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                 Text(title)
                     .font(.jotDisplay)
                     .tracking(-0.8)
@@ -129,6 +145,83 @@ private struct IntroPage<Illustration: View>: View {
     }
 }
 
+/// Asks what to call you, with the greeting it'll produce previewed as you type.
+private struct NamePage: View {
+    var onSubmit: () -> Void
+
+    @AppStorage(UserProfile.nameKey, store: UserProfile.defaults) private var name = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Spacer(minLength: 12)
+
+            // The Today header as it will look, updating with each letter.
+            VStack(alignment: .leading, spacing: 8) {
+                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                    .font(.jotSection)
+                    .foregroundStyle(Color.jotTextSecondary)
+                Text(UserProfile.greeting(at: .now, name: name))
+                    .font(.jotDisplay)
+                    .tracking(-0.8)
+                    .foregroundStyle(Color.jotTextPrimary)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.interpolate)
+                    .animation(.jot, value: name)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .jotCard(padding: 0)
+            .padding(.horizontal, 24)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Preview: \(UserProfile.greeting(at: .now, name: name))")
+
+            Spacer(minLength: 12)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("04")
+                    .font(.jotTime)
+                    .foregroundStyle(Color.jotAccentText)
+                Text("What should Jot call you?")
+                    .font(.jotDisplay)
+                    .tracking(-0.8)
+                    .foregroundStyle(Color.jotTextPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                TextField("Your first name", text: $name)
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .textContentType(.givenName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.next)
+                    .focused($focused)
+                    .onSubmit {
+                        name = UserProfile.cleaned(name)
+                        onSubmit()
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 56)
+                    .background(Color.jotSurface, in: .rect(cornerRadius: 16, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(focused ? Color.jotAccent : Color.jotBorder, lineWidth: focused ? 2 : 1)
+                    }
+
+                Text("Optional. It stays on this iPhone, and you can change it in Settings.")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+        }
+        .contentShape(.rect)
+        .onTapGesture { focused = false }
+        .onDisappear { name = UserProfile.cleaned(name) }
+    }
+}
+
 private struct PermissionsPage: View {
     @Environment(CalendarService.self) private var calendar
     @State private var permissions = PermissionCenter()
@@ -136,9 +229,9 @@ private struct PermissionsPage: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text("04")
+                Text("05")
                     .font(.jotTime)
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                     .padding(.top, 24)
                 Text("A few permissions")
                     .font(.jotDisplay)
@@ -158,12 +251,51 @@ private struct PermissionsPage: View {
                     }
                     .staggeredAppear(index + 1)
                 }
+
+                BriefRow()
+                    .staggeredAppear(PermissionCenter.Kind.allCases.count + 1)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
         .scrollIndicators(.hidden)
         .task { await permissions.refresh() }
+    }
+}
+
+/// The morning brief and evening check-in, on by default: the reasons to open
+/// Jot each day. One switch here; separate ones in Settings.
+private struct BriefRow: View {
+    @AppStorage(MorningBrief.Keys.enabled) private var isEnabled = false
+    @AppStorage(EveningNudge.Keys.enabled) private var nudgeEnabled = true
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "sunrise.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(Color.jotReminder)
+                .frame(width: 44, height: 44)
+                .background(Color.jotRaised, in: .rect(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Morning and evening")
+                    .font(.jotHeadline)
+                    .foregroundStyle(Color.jotTextPrimary)
+                Text("Your day at 8:00 AM, and at 8:00 PM anything still open. Change these in Settings.")
+                    .font(.jotCaption)
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Toggle("Morning brief and evening check-in", isOn: $isEnabled)
+                .labelsHidden()
+                .tint(Color.jotAccentText)
+        }
+        .jotCard()
+        .onChange(of: isEnabled) { _, on in nudgeEnabled = on }
+        .onAppear {
+            // On unless the person has already decided.
+            if UserDefaults.standard.object(forKey: MorningBrief.Keys.enabled) == nil { isEnabled = true }
+        }
     }
 }
 
@@ -174,9 +306,15 @@ struct PermissionRow: View {
     var onRequest: () -> Void
 
     @Environment(\.jotAnimation) private var animation
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        HStack(spacing: 14) {
+        // Side by side normally; stacked at accessibility sizes so the button
+        // doesn't push the card past the screen edge.
+        let layout = typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+            : AnyLayout(HStackLayout(spacing: 14))
+        layout {
             Image(systemName: kind.symbol)
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(status == .granted ? Color.jotTask : Color.jotAccent)
@@ -239,7 +377,7 @@ private struct PageDots: View {
         HStack(spacing: 6) {
             ForEach(0..<count, id: \.self) { index in
                 Capsule()
-                    .fill(index == current ? Color.jotAccent : Color.jotTextSecondary.opacity(0.35))
+                    .fill(index == current ? Color.jotAccentText : Color.jotTextSecondary.opacity(0.35))
                     .frame(width: index == current ? 22 : 7, height: 7)
             }
         }

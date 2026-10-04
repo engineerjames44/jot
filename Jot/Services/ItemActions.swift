@@ -66,6 +66,19 @@ enum ItemActions {
         commit(context)
     }
 
+    /// Moves open items that are past due to the same time tomorrow. Repeating
+    /// items are left alone: their next occurrence already comes round.
+    static func moveToTomorrow(_ items: [JotItem], in context: ModelContext, now: Date = .now) {
+        let calendar = Calendar.current
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        for item in items where canSnooze(item) {
+            guard let due = item.dueDate, due < now else { continue }
+            let time = calendar.dateComponents([.hour, .minute], from: due)
+            item.dueDate = calendar.date(bySettingHour: time.hour ?? 9, minute: time.minute ?? 0, second: 0, of: tomorrow)
+        }
+        commit(context)
+    }
+
     /// Deletes now; the item can be brought back from the Undo toast for a few
     /// seconds, after which its recording is removed too.
     static func delete(_ item: JotItem, in context: ModelContext) {

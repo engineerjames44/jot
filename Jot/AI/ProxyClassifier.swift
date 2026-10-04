@@ -83,6 +83,7 @@ enum SortingError: LocalizedError, Equatable {
     case unavailable
     case unreadable
     case notAllowed
+    case onDeviceUnavailable
 
     init(status: Int, code: String?) {
         switch (status, code) {
@@ -101,6 +102,7 @@ enum SortingError: LocalizedError, Equatable {
         case .unavailable: "Jot's sorting is unavailable right now."
         case .unreadable: "Jot couldn't work out what kind of item this is."
         case .notAllowed: "Smart sorting is off. You can turn it on in Settings."
+        case .onDeviceUnavailable: "To sort automatically, turn on Apple Intelligence in the Settings app, or choose Claude in Jot's settings."
         }
     }
 
@@ -120,9 +122,20 @@ enum InstallID {
     }
 }
 
-/// The classifier captures and Siri use.
+/// The classifier captures and Siri use: on this iPhone by default, or Claude
+/// through Jot's server when the person has chosen it.
 enum Classifier {
+    /// Whether anything can sort right now. When false, captures stay notes
+    /// and are sorted later.
+    static var canSort: Bool {
+        SmartSorting.engine == .onDevice ? OnDeviceClassifier.isAvailable : SmartSorting.isAllowed
+    }
+
     static func classify(_ transcript: String) async throws -> ClassifiedItem {
+        if SmartSorting.engine == .onDevice {
+            guard OnDeviceClassifier.isAvailable else { throw SortingError.onDeviceUnavailable }
+            return try await OnDeviceClassifier().classify(transcript: transcript)
+        }
         // Nothing leaves the device without permission.
         guard SmartSorting.isAllowed else { throw SortingError.notAllowed }
         #if DEBUG

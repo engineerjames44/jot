@@ -18,7 +18,7 @@ struct JotApp: App {
         _capture = State(initialValue: capture)
 
         UNUserNotificationCenter.current().delegate = notificationPresenter
-        UNUserNotificationCenter.current().setNotificationCategories([NotificationPresenter.reminderCategory])
+        UNUserNotificationCenter.current().setNotificationCategories([NotificationPresenter.reminderCategory, EveningNudge.category])
 
         // The Action Button, Control Center, and Siri reach the pipeline through here.
         CaptureCommands.toggleRecording = {

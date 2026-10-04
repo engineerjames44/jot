@@ -17,9 +17,8 @@ struct FollowUps: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("FOLLOW-UPS")
-                .font(.jotLabel)
-                .tracking(1.2)
+            Text("Follow-ups")
+                .font(.jotSection)
                 .foregroundStyle(Color.jotTextSecondary)
 
             ForEach(followUps) { followUp in
@@ -74,7 +73,7 @@ struct ParentLink: View {
             NavigationLink(value: parent) {
                 Label("Follow-up to \(parent.title)", systemImage: "arrowshape.turn.up.left")
                     .font(.jotCaption.weight(.semibold))
-                    .foregroundStyle(Color.jotAccent)
+                    .foregroundStyle(Color.jotAccentText)
                     .lineLimit(1)
             }
         }

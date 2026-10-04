@@ -12,6 +12,10 @@ struct ItemDetailView: View {
     @State private var isDeleted = false
     @State private var isSorting = false
     @State private var sortError: String?
+    @State private var showingEventEditor = false
+    /// "Added to Calendar" once it's been sent there this visit.
+    @State private var exported: String?
+    @State private var exportError: String?
 
     var body: some View {
         ScrollView {
@@ -42,6 +46,8 @@ struct ItemDetailView: View {
                     whenCard
                         .transition(.opacity.combined(with: .move(edge: .top)))
                 }
+
+                exportButton
 
                 if ItemActions.canComplete(item) {
                     completeButton
@@ -79,6 +85,12 @@ struct ItemDetailView: View {
                         Button("Sort again", systemImage: "sparkles", action: sortAgain)
                             .disabled(isSorting)
                     }
+                    if CalendarExport.canAddToCalendar(item) {
+                        Button("Add to Calendar", systemImage: "calendar.badge.plus") { showingEventEditor = true }
+                    }
+                    if CalendarExport.canAddToReminders(item) {
+                        Button("Add to Reminders", systemImage: "checklist", action: addToReminders)
+                    }
                     Divider()
                     Button("Delete", systemImage: "trash", role: .destructive) {
                         confirmingDelete = true
@@ -111,11 +123,59 @@ struct ItemDetailView: View {
         } message: {
             Text(sortError ?? "")
         }
+        .sheet(isPresented: $showingEventEditor) {
+            EventEditor(item: item) { saved in
+                showingEventEditor = false
+                if saved { withAnimation(animation) { exported = "Added to Calendar" } }
+            }
+            .ignoresSafeArea()
+        }
+        .alert("Couldn't add it", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(exportError ?? "")
+        }
+        .sensoryFeedback(.success, trigger: exported) { _, new in new != nil }
         .task { await playback.load(fileName: item.audioFileName) }
         .onDisappear {
             playback.stop()
             guard !isDeleted else { return }
             ItemActions.commit(modelContext)
+        }
+    }
+
+    /// Calendar for events with a time; Reminders for reminders and tasks.
+    @ViewBuilder
+    private var exportButton: some View {
+        if let exported {
+            Label(exported, systemImage: "checkmark.circle.fill")
+                .font(.jotHeadline)
+                .foregroundStyle(Color.jotTask)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .transition(.opacity)
+        } else if CalendarExport.canAddToCalendar(item) {
+            Button { showingEventEditor = true } label: {
+                Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.jotSecondary)
+        } else if CalendarExport.canAddToReminders(item) {
+            Button(action: addToReminders) {
+                Label("Add to Reminders", systemImage: "checklist")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.jotSecondary)
+        }
+    }
+
+    private func addToReminders() {
+        Task {
+            do {
+                try await CalendarExport.addToReminders(item)
+                withAnimation(animation) { exported = "Added to Reminders" }
+            } catch {
+                exportError = error.localizedDescription
+            }
         }
     }
 
@@ -141,63 +201,85 @@ struct ItemDetailView: View {
         )
     }
 
+    /// When and Repeat as two plain rows, like Settings: a label on the left,
+    /// the control on the right. Nothing scrolls sideways or gets cut off.
     private var whenCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("When", systemImage: "calendar")
-                    .font(.jotHeadline)
-                    .foregroundStyle(Color.jotTextPrimary)
-                Spacer()
-                if item.dueDate == nil {
-                    Button("Add time") { setDefaultDueDate() }
-                        .buttonStyle(.jotSecondary)
-                        .controlSize(.small)
-                } else {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Image(systemName: "calendar")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Color.jotTextSecondary)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("When")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Text(item.dueDate.map { JotDate.short($0) } ?? "No time set")
+                        .font(.jotCaption)
+                        .foregroundStyle(Color.jotTextSecondary)
+                        .contentTransition(.numericText())
+                }
+                Spacer(minLength: 8)
+                if item.dueDate != nil {
                     Button {
                         withAnimation(animation) {
                             item.dueDate = nil
                             item.recurrence = nil
                         }
                     } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 12, weight: .bold))
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title3)
+                            .symbolRenderingMode(.hierarchical)
                             .foregroundStyle(Color.jotTextSecondary)
-                            .frame(width: 28, height: 28)
-                            .background(Color.jotRaised, in: .circle)
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
                     }
                     .buttonStyle(.pressable)
                     .accessibilityLabel("Remove time")
+                } else {
+                    Button("Add time") { setDefaultDueDate() }
+                        .buttonStyle(.jotSecondary)
+                        .controlSize(.small)
                 }
             }
+            .padding(.vertical, 6)
 
+            // The picker gets its own line so it never squeezes the label.
             if let dueDate = Binding($item.dueDate) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(JotDate.short(dueDate.wrappedValue))
-                        .font(.system(.title2, design: .rounded, weight: .bold).monospacedDigit())
-                        .foregroundStyle(item.kind.color)
-                        .contentTransition(.numericText())
-                    DatePicker("Date and time", selection: dueDate)
-                        .labelsHidden()
-                        .tint(Color.jotAccent)
-                }
+                DatePicker("Date and time", selection: dueDate)
+                    .labelsHidden()
+                    .tint(Color.jotAccentText)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 36)
+                    .padding(.bottom, 10)
+            }
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("REPEAT")
-                        .font(.jotLabel)
-                        .tracking(1.2)
+            if item.dueDate != nil {
+                Rectangle().fill(Color.jotTextSecondary.opacity(0.15)).frame(height: 0.5)
+                    .padding(.leading, 36)
+                HStack(spacing: 12) {
+                    Image(systemName: "arrow.trianglehead.2.clockwise")
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(Color.jotTextSecondary)
-                    ChipPicker(
-                        options: [.init(value: Recurrence?.none, label: "Never")]
-                            + Recurrence.allCases.map { .init(value: Optional($0), label: $0.label) },
-                        selection: $item.recurrence,
-                        inset: JotMetrics.cardPadding
-                    )
-                    // Scroll edge to edge within the card.
-                    .padding(.horizontal, -JotMetrics.cardPadding)
+                        .frame(width: 24)
+                    Text("Repeat")
+                        .font(.jotHeadline)
+                        .foregroundStyle(Color.jotTextPrimary)
+                    Spacer(minLength: 8)
+                    Picker("Repeat", selection: $item.recurrence) {
+                        Text("Never").tag(Recurrence?.none)
+                        ForEach(Recurrence.allCases) { Text($0.label).tag(Optional($0)) }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(Color.jotTextPrimary)
                 }
+                .frame(minHeight: 44)
+                .padding(.vertical, 6)
             }
         }
-        .jotCard()
+        .padding(.horizontal, JotMetrics.cardPadding)
+        .padding(.vertical, 6)
+        .background(Color.jotSurface, in: .rect(cornerRadius: JotMetrics.cornerRadius, style: .continuous))
     }
 
     private var completeButton: some View {
@@ -247,7 +329,7 @@ struct PlaybackCard: View {
                     .foregroundStyle(.white)
                     .contentTransition(.symbolEffect(.replace))
                     .frame(width: 48, height: 48)
-                    .background(Color.jotAccent, in: .circle)
+                    .background(Color.jotAccentText, in: .circle)
             }
             .buttonStyle(.pressable)
             .accessibilityLabel(playback.isPlaying ? "Pause recording" : "Play recording")
@@ -314,9 +396,8 @@ private struct TranscriptQuote: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("WHAT YOU SAID")
-                .font(.jotLabel)
-                .tracking(1.2)
+            Text("What you said")
+                .font(.jotSection)
                 .foregroundStyle(Color.jotTextSecondary)
 
             HStack(alignment: .top, spacing: 14) {

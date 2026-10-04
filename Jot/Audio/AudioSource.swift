@@ -28,8 +28,8 @@ enum AudioSourceError: LocalizedError {
         switch self {
         case .permissionDenied:
             "Jot needs the microphone to hear you. Turn it on in Settings."
-        case .unavailable(let reason):
-            "Can't record right now: \(reason)"
+        case .unavailable:
+            "Jot can't hear the microphone right now. Check that no other app is using it, then try again."
         }
     }
 }
