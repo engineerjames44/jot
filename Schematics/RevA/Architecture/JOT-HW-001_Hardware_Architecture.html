@@ -245,7 +245,7 @@
   <tr><td>6</td><td>Battery capacity and dimensions (set by the case)</td><td class="open">Part done</td><td>Adafruit 3898, 400 mAh, 36 × 17 × 7.8 mm; confirm fit and lead polarity</td></tr>
   <tr><td>7</td><td>Assign every signal to a module pin (pin map)</td><td class="done">Done</td><td>See <code>BOM/Jot_RevA_Pin_List.xlsx</code></td></tr>
   <tr><td>8</td><td>NFC coil size and tuning capacitor values</td><td class="open">Open</td><td>Method and starting values in section 4.11; coil depends on the board outline</td></tr>
-  <tr><td>9</td><td>Pick an in-stock common-anode 1615 RGB LED for the battery-rail drive (section 4.10)</td><td class="open">Open</td><td>Replaces the common-cathode TJ-S1615; adds three AO3400A and pull-downs on the UI sheet</td></tr>
+  <tr><td>9</td><td>Pick an in-stock common-anode 1615 RGB LED for the battery-rail drive (section 4.10)</td><td class="done">Done</td><td>TOGIALED TJ-S1615SW6TGLCCYRGB-A5 (LCSC C273610), same family and pads as the common-cathode part it replaces: pin 1 anode, 2 blue, 3 green, 4 red. Q3-Q5 AO3400A with R15-R17 100k pull-downs; R8 1k, R9/R10 560 Ω. BOM and pin list updated 4 October.</td></tr>
   <tr><td>10</td><td>Give the mic its own T3902 symbol</td><td class="done">Done</td><td>Jot:T3902 symbol with the TDK datasheet and MPN; it keeps KiCad's Knowles LGA-5 footprint, whose pins, pads and port were checked against the T3902 datasheet and match. Netlist unchanged</td></tr>
 </table>
 
