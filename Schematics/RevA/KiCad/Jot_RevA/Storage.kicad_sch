@@ -937,7 +937,7 @@
 		(dnp no)
 		(fields_autoplaced yes)
 		(uuid "0a333a3c-64b4-4cc1-a49d-966e144ee1e7")
-		(property "Reference" "U2"
+		(property "Reference" "U4"
 			(at 163.83 92.7099 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1020,7 +1020,7 @@
 		(instances
 			(project "Jot_RevA"
 				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a/0b47c322-4767-4ab6-bf09-bf78d39931f5"
-					(reference "U2")
+					(reference "U4")
 					(unit 1)
 				)
 			)
