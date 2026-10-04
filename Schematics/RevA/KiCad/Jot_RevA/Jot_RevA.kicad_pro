@@ -688,6 +688,10 @@
     [
       "320e6f66-4d93-41ba-b8dd-674d1042cb0a",
       "Sensors"
+    ],
+    [
+      "32fe5d00-0189-4157-8ea0-b1e59c92ae9f",
+      "UI"
     ]
   ],
   "text_variables": {},

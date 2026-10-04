@@ -1,0 +1,14 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "7dbd0088-b6a6-49fa-889a-29a883cfb1c7")
+	(paper "A4")
+	(title_block
+		(title "Jot Rev A: UI")
+		(date "2026-10-04")
+		(rev "A")
+		(company "James Donal Cronin")
+	)
+	(lib_symbols)
+)

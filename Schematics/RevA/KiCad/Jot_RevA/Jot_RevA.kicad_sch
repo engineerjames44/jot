@@ -151,6 +151,52 @@
 		)
 	)
 	(sheet
+		(at 203.2 99.06)
+		(size 78.74 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "32fe5d00-0189-4157-8ea0-b1e59c92ae9f")
+		(property "Sheetname" "UI"
+			(at 203.2 98.3484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "UI.kicad_sch"
+			(at 203.2 119.9646 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "Jot_RevA"
+				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 13.97 13.97)
 		(size 82.55 68.58)
 		(exclude_from_sim no)
