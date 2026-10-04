@@ -696,6 +696,10 @@
     [
       "bc43d92a-d73a-431f-964b-a5afe0520765",
       "Debug"
+    ],
+    [
+      "56e09d94-fc61-43ee-b4b8-8470d6a2f030",
+      "NFC"
     ]
   ],
   "text_variables": {},

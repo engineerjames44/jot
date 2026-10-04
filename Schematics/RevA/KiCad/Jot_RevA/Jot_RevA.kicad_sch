@@ -243,6 +243,52 @@
 		)
 	)
 	(sheet
+		(at 20.32 167.64)
+		(size 142.24 22.86)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "56e09d94-fc61-43ee-b4b8-8470d6a2f030")
+		(property "Sheetname" "NFC"
+			(at 20.32 166.9284 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "NFC.kicad_sch"
+			(at 20.32 191.0846 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "Jot_RevA"
+				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a"
+					(page "9")
+				)
+			)
+		)
+	)
+	(sheet
 		(at 15.24 93.98)
 		(size 81.28 58.42)
 		(exclude_from_sim no)

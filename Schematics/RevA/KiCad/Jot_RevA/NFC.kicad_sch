@@ -1,0 +1,63 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "568287c2-6860-4c09-974d-a5e5cdbf84e5")
+	(paper "A4")
+	(title_block
+		(title "Jot Rev A: NFC")
+		(date "2026-10-04")
+		(rev "A")
+		(company "James Donal Cronin")
+		(comment 1 "JOT-HW-001: handheld push-to-talk voice capture")
+	)
+	(lib_symbols)
+	(global_label "NFC1"
+		(shape output)
+		(at 78.74 66.04 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "599ce97e-51f9-44a9-ab2f-af3dc38c5c7b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 70.8562 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+	(global_label "NFC2"
+		(shape output)
+		(at 78.74 76.2 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "a370efd3-2c2b-405a-8c1e-e6b651f25287")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 70.8562 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+)

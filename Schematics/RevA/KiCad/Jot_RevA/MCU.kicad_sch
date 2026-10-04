@@ -2841,7 +2841,7 @@
 	)
 	(wire
 		(pts
-			(xy 87.63 93.98) (xy 121.92 93.98)
+			(xy 91.44 93.98) (xy 121.92 93.98)
 		)
 		(stroke
 			(width 0)
@@ -3569,7 +3569,7 @@
 	)
 	(global_label "NFC2"
 		(shape input)
-		(at 87.63 93.98 180)
+		(at 91.44 93.98 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3579,7 +3579,7 @@
 		)
 		(uuid "f9194017-a5a7-402c-86da-ab66180c1909")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 79.7462 93.98 0)
+			(at 83.5562 93.98 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
