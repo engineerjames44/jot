@@ -670,7 +670,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "${KIPRJMOD}/../../Datasheets/Storage/W25Q01JV_Winbond.pdf"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -681,7 +681,7 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "1 Gbit (128 MB) 3 V serial NOR flash, SPI / Dual / Quad SPI, WSON-8 8x6 mm (ZE)"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -702,6 +702,15 @@
 				)
 				(fill
 					(type none)
+				)
+			)
+		)
+		(property "ki_keywords" "flash nor memory qspi spi storage"
+			(at 0 0 0)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
 		)
