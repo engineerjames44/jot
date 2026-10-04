@@ -13,7 +13,21 @@ struct CalendarEvent: Identifiable, Hashable, Sendable {
     let calendarTitle: String
 }
 
-/// Reads the user's existing calendars. Jot never writes to them.
+extension CalendarEvent {
+    /// True when this calendar event is a Jot event that was added with Add to
+    /// Calendar (same title, same start), so it isn't shown twice.
+    func duplicates(_ items: [JotItem], calendar: Calendar = .current) -> Bool {
+        guard !isAllDay else { return false }
+        return items.contains { item in
+            guard item.kind == .event, let at = item.occurrence(onDayOf: start, calendar: calendar) else { return false }
+            return abs(at.timeIntervalSince(start)) < 60
+                && item.title.compare(title, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+        }
+    }
+}
+
+/// Reads the user's existing calendars. Jot writes only when the person
+/// chooses Add to Calendar, through the system's own sheet.
 @MainActor
 @Observable
 final class CalendarService {

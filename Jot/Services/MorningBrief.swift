@@ -50,7 +50,7 @@ enum MorningBrief {
         func time(_ date: Date) -> String { date.formatted(date: .omitted, time: .shortened) }
 
         // Events: the calendar's plus Jot's own, in time order.
-        var eventLines: [(Date, String)] = events.map {
+        var eventLines: [(Date, String)] = events.filter { !$0.duplicates(items) }.map {
             ($0.isAllDay ? start : $0.start, $0.isAllDay ? $0.title : "\($0.title) \(time($0.start))")
         }
         for item in items where item.kind == .event {

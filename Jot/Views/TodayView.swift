@@ -335,7 +335,8 @@ struct TodayView: View {
         var content = TodayContent()
         var timed: [TimelineEntry] = []
 
-        for event in calendar.todaysEvents {
+        // Skip events that are Jot's own, added with Add to Calendar.
+        for event in calendar.todaysEvents where !event.duplicates(items) {
             let entry = TimelineEntry(id: "cal-\(event.id)", time: event.isAllDay ? nil : event.start, isOverdue: false, source: .calendar(event))
             event.isAllDay ? content.anytime.append(entry) : timed.append(entry)
         }

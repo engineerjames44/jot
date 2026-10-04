@@ -74,4 +74,16 @@ struct EveningNudgeTests {
         #expect(done.dueDate == at(9))
         #expect(later.dueDate == at(22))
     }
+
+    /// After Add to Calendar, Today and the brief show the event once, not twice.
+    @Test func exportedEventIsNotShownTwice() {
+        let start = at(19)
+        let item = JotItem(kind: .event, title: "Dinner with Sam", dueDate: start)
+        let copy = CalendarEvent(id: "1", title: "dinner with sam", start: start, end: start.addingTimeInterval(3600),
+                                 isAllDay: false, location: nil, calendarTitle: "Calendar")
+        let other = CalendarEvent(id: "2", title: "Dinner with Sam", start: at(20), end: at(21),
+                                  isAllDay: false, location: nil, calendarTitle: "Calendar")
+        #expect(copy.duplicates([item]))
+        #expect(!other.duplicates([item]))
+    }
 }
