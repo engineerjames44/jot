@@ -5,10 +5,10 @@
 	(uuid "bf668439-98f8-4803-b993-f9f2027f2e91")
 	(paper "A4")
 	(title_block
-		(title "Jot_RevA_Audio")
+		(title "Jot Rev A: Audio")
 		(date "2026-10-03")
-		(rev "Rev A")
-		(company "James Cronin")
+		(rev "A")
+		(company "James Donal Cronin")
 	)
 	(lib_symbols
 		(symbol "Sensor_Audio:SPH0641LU4H-1"
