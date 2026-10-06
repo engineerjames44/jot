@@ -4082,7 +4082,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal"
 			(at 185.42 91.44 0)
 			(hide yes)
 			(show_name no)
@@ -6900,7 +6900,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_USB:USB_C_Receptacle_HRO_TYPE-C-31-M-12"
 			(at 34.29 86.36 0)
 			(hide yes)
 			(show_name no)

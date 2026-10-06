@@ -1,0 +1,4 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "Jot")(type "KiCad")(uri "${KIPRJMOD}/Jot.pretty")(options "")(descr "Jot Rev A project footprints, built from part datasheets"))
+)
