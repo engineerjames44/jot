@@ -15,7 +15,7 @@ Architecture: [JOT-HW-001](Architecture/JOT-HW-001_Hardware_Architecture.pdf).
 
 | Folder | Parts |
 | --- | --- |
-| `Power/` | USB-C connector and ESD, BQ25101 charger, TPS7A02 LDO, MAX17048, JST-PH, battery |
+| `Power/` | USB-C connector and ESD, MCP73831 charger, TPS7A02 LDO, MAX17048, JST-PH, battery |
 | `MCU/` | Raytac MDBT50Q-1MV2, nRF52840 Product Specification, 32.768 kHz crystal |
 | `Audio/` | TDK T3902 PDM microphone, AO3401A mic power switch |
 | `Storage/` | 128 MB QSPI NOR flash |
