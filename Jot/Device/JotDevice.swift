@@ -24,6 +24,8 @@ final class JotDevice: NSObject {
     private(set) var status: Status = .off
     /// What happened to the last clip, for the Develop screen.
     private(set) var lastClip: String?
+    /// The most audio bytes one notification can carry on this connection.
+    private(set) var packetLimit: Int?
 
     private let source = BLEAudioSource()
     private let capture: CaptureController
@@ -31,6 +33,7 @@ final class JotDevice: NSObject {
     @ObservationIgnored private var peripheral: CBPeripheral?
     @ObservationIgnored private var assembler = ClipAssembler()
     @ObservationIgnored private var clipStartedAt: Date?
+    @ObservationIgnored private var largestPacket = 0
 
     var isEnabled: Bool { status != .off }
 
@@ -56,7 +59,8 @@ final class JotDevice: NSObject {
         peripheral = nil
         assembler = ClipAssembler()
         status = .off
-        capture.endDeviceCapture(source)
+        packetLimit = nil
+        capture.failDeviceCapture(source)
     }
 
     private func scan() {
@@ -85,9 +89,11 @@ final class JotDevice: NSObject {
     }
 
     private func handleAudio(_ packet: Data) {
+        largestPacket = max(largestPacket, packet.count)
         switch assembler.receive(packet) {
         case .started:
             clipStartedAt = .now
+            largestPacket = packet.count
         case .finished(let adpcm, let sampleRate):
             let samples = IMAADPCM.decode(adpcm)
             let seconds = Double(samples.count) / Double(max(sampleRate, 1))
@@ -96,8 +102,8 @@ final class JotDevice: NSObject {
             source.deliver(samples, sampleRate: sampleRate)
             capture.endDeviceCapture(source)
         case .failed(let reason):
-            lastClip = "Clip failed: \(reason)"
-            capture.endDeviceCapture(source)
+            lastClip = "Clip failed: \(reason). Largest packet \(largestPacket) bytes."
+            capture.failDeviceCapture(source)
         case nil:
             break
         }
@@ -139,8 +145,9 @@ extension JotDevice: @preconcurrency CBCentralManagerDelegate {
         error: (any Error)?
     ) {
         self.peripheral = nil
+        packetLimit = nil
         assembler = ClipAssembler()
-        capture.endDeviceCapture(source)
+        capture.failDeviceCapture(source)
         scan()
     }
 }
@@ -161,6 +168,7 @@ extension JotDevice: @preconcurrency CBPeripheralDelegate {
             peripheral.setNotifyValue(true, for: characteristic)
         }
         if characteristics.contains(where: { $0.uuid == Self.audioID }) {
+            packetLimit = peripheral.maximumWriteValueLength(for: .withoutResponse)
             status = .connected
         } else {
             status = .unavailable("This Jot's firmware doesn't send audio. Upload jot_v1_clip.")

@@ -229,6 +229,22 @@ final class CaptureController {
         endCapture(into: context ?? SharedStore.container.mainContext)
     }
 
+    /// The device's clip didn't arrive whole: drop the capture and say so,
+    /// rather than waiting on a transcript of nothing.
+    func failDeviceCapture(_ device: any AudioSource) {
+        guard source === device, isRecording else { return }
+        isHeld = false
+        stopWatchdog()
+        source.stop()
+        emit(.stop)
+        transcriptionTask?.cancel()
+        transcriptionTask = nil
+        let recording = recordingTask
+        recordingTask = nil
+        Task { AudioStore.remove(await recording?.value) }
+        fail(message: "Jot's recording didn't come through. Try again.")
+    }
+
     /// Call when the orb is released. `context` receives the new item.
     func endCapture(into context: ModelContext) {
         isHeld = false

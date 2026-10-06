@@ -48,7 +48,7 @@ struct JotDeviceCard: View {
         case .unavailable(let reason): reason
         case .searching: "Looking for Jot…"
         case .connecting: "Connecting…"
-        case .connected: "Connected. Hold its button and speak."
+        case .connected: "Connected, packets up to \(device.packetLimit ?? 0) bytes. Hold its button and speak."
         }
     }
 }
