@@ -1898,6 +1898,16 @@
 	)
 	(wire
 		(pts
+			(xy 97.79 85.09) (xy 97.79 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "25325657-fa9c-423d-a800-f27d5d33ffe4")
+	)
+	(wire
+		(pts
 			(xy 218.44 86.36) (xy 218.44 93.98)
 		)
 		(stroke
@@ -1975,6 +1985,16 @@
 			(type default)
 		)
 		(uuid "5c4ac472-dabc-463c-a6e0-69af17ef089b")
+	)
+	(wire
+		(pts
+			(xy 97.79 93.98) (xy 97.79 95.25)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6032d631-0d13-436c-8caf-cd57225d352a")
 	)
 	(wire
 		(pts
@@ -2560,7 +2580,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 238.76 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -2641,7 +2661,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 251.46 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -2967,7 +2987,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 205.74 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -3220,7 +3240,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 172.72 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -3341,6 +3361,87 @@
 			(project "Jot_RevA"
 				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a/32fe5d00-0189-4157-8ea0-b1e59c92ae9f"
 					(reference "#PWR046")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:R")
+		(at 97.79 90.17 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "99eef259-5441-4cc9-9308-d22687f50ed7")
+		(property "Reference" "R19"
+			(at 100.33 88.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10"
+			(at 100.33 91.44 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_1206_3216Metric"
+			(at 97.79 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 97.79 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 97.79 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1b932929-2890-4d9c-b475-84250ca8d246")
+		)
+		(pin "2"
+			(uuid "7a2a7ebb-bdf1-45ef-839f-356e952e9a95")
+		)
+		(instances
+			(project "Jot_RevA"
+				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a/32fe5d00-0189-4157-8ea0-b1e59c92ae9f"
+					(reference "R19")
 					(unit 1)
 				)
 			)
@@ -3695,7 +3796,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 185.42 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -3855,7 +3956,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 78.232 135.89 90)
 			(hide yes)
 			(show_name no)
@@ -4095,7 +4196,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
 			(at 218.44 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -4408,106 +4509,5 @@
 				)
 			)
 		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 97.79 90.17 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "99eef259-5441-4cc9-9308-d22687f50ed7")
-		(property "Reference" "R19"
-			(at 100.33 88.9 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "10"
-			(at 100.33 91.44 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 97.79 90.17 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 97.79 90.17 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 97.79 90.17 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(hide yes)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "1b932929-2890-4d9c-b475-84250ca8d246")
-		)
-		(pin "2"
-			(uuid "7a2a7ebb-bdf1-45ef-839f-356e952e9a95")
-		)
-		(instances
-			(project "Jot_RevA"
-				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a/32fe5d00-0189-4157-8ea0-b1e59c92ae9f"
-					(reference "R19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 97.79 85.09) (xy 97.79 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "25325657-fa9c-423d-a800-f27d5d33ffe4")
-	)
-	(wire
-		(pts
-			(xy 97.79 93.98) (xy 97.79 95.25)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "6032d631-0d13-436c-8caf-cd57225d352a")
 	)
 )
