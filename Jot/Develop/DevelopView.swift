@@ -24,6 +24,7 @@ struct DevelopView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     header
                     DevRecorderCard(recorder: recorder, screen: "Develop")
+                    JotDeviceCard()
                     exportRow
                     ChipPicker(options: filterOptions, selection: $filter, inset: 0)
                     list

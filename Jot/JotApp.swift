@@ -6,6 +6,7 @@ import UserNotifications
 struct JotApp: App {
     @State private var capture: CaptureController
     @State private var calendar = CalendarService()
+    @State private var device: JotDevice
     private let notificationPresenter = NotificationPresenter()
 
     init() {
@@ -16,6 +17,7 @@ struct JotApp: App {
             return CaptureController()
         }()
         _capture = State(initialValue: capture)
+        _device = State(initialValue: JotDevice(capture: capture))
 
         UNUserNotificationCenter.current().delegate = notificationPresenter
         UNUserNotificationCenter.current().setNotificationCategories([NotificationPresenter.reminderCategory, EveningNudge.category])
@@ -37,6 +39,7 @@ struct JotApp: App {
             }
             .environment(capture)
             .environment(calendar)
+            .environment(device)
             .onOpenURL { url in
                 switch JotLink(url: url) {
                 case .record:

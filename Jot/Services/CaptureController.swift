@@ -91,7 +91,9 @@ final class CaptureController {
     /// The item whose card is about to fly into the timeline.
     var landingItemID: UUID? { confirmation?.item.id }
 
-    private let source: any AudioSource
+    private let micSource: any AudioSource
+    /// The mic, or a Jot device for the capture in progress.
+    private var source: any AudioSource
     private let transcribe: Transcribe
     private let classify: Classify
 
@@ -125,6 +127,7 @@ final class CaptureController {
             try await Classifier.classify(transcript)
         }
     ) {
+        self.micSource = source
         self.source = source
         self.transcribe = transcribe
         self.classify = classify
@@ -134,12 +137,17 @@ final class CaptureController {
 
     /// Call when the orb is pressed down.
     func beginCapture() {
+        beginCapture(from: micSource)
+    }
+
+    private func beginCapture(from newSource: any AudioSource) {
         guard !phase.isBusy, SharedStore.canWrite else { return }
+        source = newSource
         if confirmation != nil { dismissConfirmation() }
         clearHint()
         // First use: ask for the microphone before the screen goes dark, so the
         // system prompt doesn't land on top of "Listening".
-        if AVAudioApplication.shared.recordPermission == .undetermined {
+        if newSource === micSource, AVAudioApplication.shared.recordPermission == .undetermined {
             isHeld = false
             isHandsFree = false
             Task {
@@ -204,6 +212,21 @@ final class CaptureController {
         followUpParentID = parent.id
         toggleHandsFree(into: context)
         if !phase.isBusy { followUpParentID = nil }
+    }
+
+    /// The button on a Jot device was pressed. The device records on its own;
+    /// the capture stays open until its clip arrives (`endDeviceCapture`).
+    func beginDeviceCapture(from device: any AudioSource) {
+        guard !phase.isBusy else { return }
+        context = SharedStore.container.mainContext
+        isHandsFree = false
+        beginCapture(from: device)
+    }
+
+    /// The device's clip arrived, or the device went away: finish and transcribe.
+    func endDeviceCapture(_ device: any AudioSource) {
+        guard source === device, phase.isBusy else { return }
+        endCapture(into: context ?? SharedStore.container.mainContext)
     }
 
     /// Call when the orb is released. `context` receives the new item.

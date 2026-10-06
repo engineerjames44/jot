@@ -308,6 +308,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Jot;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Jot connects to your Jot recorder over Bluetooth to receive what you say into it.";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Jot shows your existing calendar events alongside your notes, tasks, and reminders. It only adds an event when you choose Add to Calendar.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Jot records your voice while you hold the record button so it can turn what you say into notes, tasks, reminders, and events.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Jot adds a reminder to your Reminders app when you choose Add to Reminders. It doesn't read or change your other reminders.";
@@ -342,6 +343,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Jot;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Jot connects to your Jot recorder over Bluetooth to receive what you say into it.";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Jot shows your existing calendar events alongside your notes, tasks, and reminders. It only adds an event when you choose Add to Calendar.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Jot records your voice while you hold the record button so it can turn what you say into notes, tasks, reminders, and events.";
 				INFOPLIST_KEY_NSRemindersFullAccessUsageDescription = "Jot adds a reminder to your Reminders app when you choose Add to Reminders. It doesn't read or change your other reminders.";
