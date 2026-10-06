@@ -8,7 +8,7 @@
 // Jot BLE service (the iPhone app uses these IDs):
 //   Service           a5bc1576-7c64-4efe-9c40-2b39fdf53bed
 //   Button  (notify)  15619899-b8cd-4254-97ff-0c757fa68b3d   uint8: 1 pressed, 0 released
-//   Audio   (notify)  18d71983-6ed1-441e-bdd3-80fe9e1b1529   clip packets, max 128 bytes:
+//   Audio (indicate)  18d71983-6ed1-441e-bdd3-80fe9e1b1529   clip packets, max 128 bytes:
 //     START  01 | codec u8 (1 = IMA ADPCM) | sample rate u16 LE | total bytes u32 LE
 //     DATA   02 | packet number u16 LE (from 0) | up to 125 bytes of ADPCM
 //     END    03 | packet count u16 LE | total bytes u32 LE
@@ -20,12 +20,13 @@ const int BUTTON_PIN = D1;
 const int SAMPLE_RATE = 16000;
 const int CLIP_MAX = 120000;            // bytes of ADPCM = 15 s
 const int PACKET_MAX = 128;
-const int PACKET_GAP_MS = 5;            // sending flat out overflows the BLE queue and drops packets
 const int DATA_MAX = PACKET_MAX - 3;
 
 BLEService jotService("a5bc1576-7c64-4efe-9c40-2b39fdf53bed");
 BLEByteCharacteristic buttonChar("15619899-b8cd-4254-97ff-0c757fa68b3d", BLERead | BLENotify);
-BLECharacteristic audioChar("18d71983-6ed1-441e-bdd3-80fe9e1b1529", BLENotify, PACKET_MAX, false);
+// Indications: the phone confirms each packet before the next is sent. Notifications
+// were faster but the iPhone dropped packets under load.
+BLECharacteristic audioChar("18d71983-6ed1-441e-bdd3-80fe9e1b1529", BLEIndicate, PACKET_MAX, false);
 
 uint8_t clip[CLIP_MAX];
 volatile int clipLen = 0;               // bytes written
@@ -103,7 +104,6 @@ void sendClip(int total) {
     memcpy(p + 3, clip + off, n);
     if (!sendPacket(p, 3 + n)) { Serial.print("DATA failed at packet "); Serial.println(seq); return; }
     BLE.poll();
-    delay(PACKET_GAP_MS);
   }
   p[0] = 0x03; p[1] = seq & 0xff; p[2] = seq >> 8;
   for (int i = 0; i < 4; i++) p[3 + i] = (total >> (8 * i)) & 0xff;
@@ -125,6 +125,7 @@ void setup() {
   BLE.setLocalName("Jot");
   BLE.setDeviceName("Jot");
   BLE.setAdvertisedService(jotService);
+  BLE.setConnectionInterval(12, 24);    // ask for 15-30 ms (units of 1.25 ms): each packet waits one round trip
   jotService.addCharacteristic(buttonChar);
   jotService.addCharacteristic(audioChar);
   BLE.addService(jotService);
