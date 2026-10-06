@@ -115,7 +115,7 @@ struct JotDeviceProtocolTests {
         for _ in 0..<ClipAssembler.maxRounds {
             #expect(assembler.receive(end(count: 2, total: 4)) == .resend([1]))
         }
-        #expect(assembler.receive(end(count: 2, total: 4)) == .failed("still missing 1 packets after 12 tries"))
+        #expect(assembler.receive(end(count: 2, total: 4)) == .failed("still missing 1 packets after 20 tries"))
         #expect(!assembler.isActive)
     }
 

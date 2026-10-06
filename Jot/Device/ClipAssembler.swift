@@ -6,8 +6,9 @@ import Foundation
 ///     DATA   02 | packet number u16 LE (from 0) | audio bytes
 ///     END    03 | packet count u16 LE | total bytes u32 LE
 ///
-/// Packets are sent flat out and some get dropped, so at each END the missing
-/// packet numbers are asked for again (`resendRequest`) until the clip is whole.
+/// Packets stream while the button is held and some get dropped, so at each END
+/// the missing packet numbers are asked for again (`resendRequest`) until the
+/// clip is whole. START's total is 0 (unknown at the press); END's totals count.
 struct ClipAssembler {
     enum Event: Equatable {
         case started
@@ -19,12 +20,16 @@ struct ClipAssembler {
 
     /// Most packet numbers in one resend request (fits a 128-byte write).
     static let maxResend = 60
-    /// Rounds of asking again before giving up on a clip.
-    static let maxRounds = 12
+    /// Rounds of asking again before giving up on a clip (END is sent twice,
+    /// so one lost packet can take two rounds).
+    static let maxRounds = 20
+    /// Times to ask for END after silence before giving up.
+    static let maxStalls = 10
 
     private(set) var isActive = false
     /// Rounds of resending this clip took, for diagnostics.
     private(set) var rounds = 0
+    private var stalls = 0
     private var sampleRate = 16000
     private var packets: [Int: Data] = [:]
 
@@ -45,6 +50,7 @@ struct ClipAssembler {
             // A dropped START shouldn't lose the clip: the END carries the totals.
             if !isActive { begin() }
             let number = Self.uint(bytes, at: 1, size: 2)
+            stalls = 0
             if packets[number] == nil { packets[number] = Data(bytes[3...]) }
             return nil
 
@@ -70,7 +76,9 @@ struct ClipAssembler {
     /// an empty request makes the device send END again.
     mutating func stalled() -> Event? {
         guard isActive else { return nil }
-        return askAgain(for: [])
+        stalls += 1
+        guard stalls <= Self.maxStalls else { return fail("the device stopped sending") }
+        return .resend([])
     }
 
     private mutating func askAgain(for missing: [Int]) -> Event {
@@ -84,6 +92,7 @@ struct ClipAssembler {
     private mutating func begin() {
         isActive = true
         rounds = 0
+        stalls = 0
         sampleRate = 16000
         packets = [:]
     }

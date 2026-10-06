@@ -14,8 +14,10 @@
 //     END    03 | packet count u16 LE | total bytes u32 LE
 //   Resend  (write)   6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41   from the phone, after an END:
 //     04 | count u8 (0-60) | packet numbers u16 LE...   resends those packets, then END again
-//   Packets are sent flat out and the iPhone drops some, so the phone asks again for
-//   whatever is missing until it has the whole clip. The last clip stays in RAM for this.
+//   Audio streams while the button is held, one packet every PACKET_GAP_MS (sent flat
+//   out, ArduinoBLE silently drops packets). START goes at the press with total 0; the
+//   END after release carries the real totals. Anything still lost is asked for again
+//   by the phone, so the last clip stays in RAM.
 
 #include <ArduinoBLE.h>
 #include <PDM.h>
@@ -24,6 +26,8 @@ const int BUTTON_PIN = D1;
 const int SAMPLE_RATE = 16000;
 const int CLIP_MAX = 120000;            // bytes of ADPCM = 15 s
 const int PACKET_MAX = 128;
+const int PACKET_GAP_MS = 14;           // ~71 packets/s; the audio needs 64
+const int DEBOUNCE_MS = 20;
 const int DATA_MAX = PACKET_MAX - 3;
 
 BLEService jotService("a5bc1576-7c64-4efe-9c40-2b39fdf53bed");
@@ -36,6 +40,9 @@ volatile int clipLen = 0;               // bytes written
 volatile bool highNibble = false;
 volatile bool recording = false;
 int lastTotal = 0;                      // bytes in the last clip, kept for resends
+bool streaming = false;                 // this clip is being sent while it records
+int nextSeq = 0;                        // next packet to stream
+unsigned long lastSendAt = 0;
 
 // ---- IMA ADPCM encoder ----
 const int8_t indexTable[16] = {-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8};
@@ -93,6 +100,13 @@ bool sendPacket(const uint8_t* data, int len) {
   return false;
 }
 
+// Waits out the gap since the last packet, then sends.
+bool pacedPacket(const uint8_t* data, int len) {
+  while (millis() - lastSendAt < PACKET_GAP_MS) BLE.poll();
+  lastSendAt = millis();
+  return sendPacket(data, len);
+}
+
 bool sendData(int seq, int total) {
   uint8_t p[PACKET_MAX];
   int off = seq * DATA_MAX;
@@ -100,7 +114,7 @@ bool sendData(int seq, int total) {
   int n = min(DATA_MAX, total - off);
   p[0] = 0x02; p[1] = seq & 0xff; p[2] = seq >> 8;
   memcpy(p + 3, clip + off, n);
-  return sendPacket(p, 3 + n);
+  return pacedPacket(p, 3 + n);
 }
 
 void sendEnd(int total) {
@@ -108,28 +122,29 @@ void sendEnd(int total) {
   int count = (total + DATA_MAX - 1) / DATA_MAX;
   p[0] = 0x03; p[1] = count & 0xff; p[2] = count >> 8;
   for (int i = 0; i < 4; i++) p[3 + i] = (total >> (8 * i)) & 0xff;
-  sendPacket(p, 7);
+  pacedPacket(p, 7);
+  pacedPacket(p, 7);                    // twice: a lost END costs the phone a wait
 }
 
-void sendClip(int total) {
-  uint8_t p[8];
-  unsigned long t0 = millis();
-  p[0] = 0x01; p[1] = 1;
-  p[2] = SAMPLE_RATE & 0xff; p[3] = SAMPLE_RATE >> 8;
-  for (int i = 0; i < 4; i++) p[4 + i] = (total >> (8 * i)) & 0xff;
-  if (!sendPacket(p, 8)) { Serial.println("START failed"); return; }
+void sendStart() {
+  uint8_t p[8] = {0x01, 1, SAMPLE_RATE & 0xff, SAMPLE_RATE >> 8, 0, 0, 0, 0};
+  pacedPacket(p, 8);
+}
 
+// After release: send whatever hasn't streamed yet, then END.
+void finishClip(int total) {
+  unsigned long t0 = millis();
+  if (!streaming) { sendStart(); nextSeq = 0; }
   int count = (total + DATA_MAX - 1) / DATA_MAX;
-  for (int seq = 0; seq < count; seq++) {
-    if (!sendData(seq, total)) { Serial.print("DATA failed at packet "); Serial.println(seq); return; }
-    BLE.poll();
+  int left = count - nextSeq;
+  for (; nextSeq < count; nextSeq++) {
+    if (!sendData(nextSeq, total)) { Serial.print("DATA failed at packet "); Serial.println(nextSeq); return; }
   }
   sendEnd(total);
-
-  unsigned long ms = millis() - t0;
-  Serial.print("Sent "); Serial.print(total); Serial.print(" bytes in "); Serial.print(count);
-  Serial.print(" packets, "); Serial.print(ms); Serial.print(" ms (");
-  Serial.print(ms ? total * 1000UL / ms : 0); Serial.println(" bytes/s)");
+  streaming = false;
+  Serial.print("Sent "); Serial.print(count); Serial.print(" packets; ");
+  Serial.print(left); Serial.print(" were left at release, sent in ");
+  Serial.print(millis() - t0); Serial.println(" ms");
 }
 
 // The phone asks for packets it missed: 04 | count | packet numbers u16 LE.
@@ -177,27 +192,39 @@ void loop() {
   bool connected = central && central.connected();
   setLed(LEDG, connected && !recording);
 
-  bool pressed = digitalRead(BUTTON_PIN) == LOW;
-  static bool wasPressed = false;
+  // Debounced button.
+  static bool pressed = false;
+  static bool lastReading = false;
+  static unsigned long changedAt = 0;
+  bool reading = digitalRead(BUTTON_PIN) == LOW;
+  if (reading != lastReading) { lastReading = reading; changedAt = millis(); }
+  bool wasPressed = pressed;
+  if (millis() - changedAt >= DEBOUNCE_MS) pressed = reading;
 
-  if (pressed && !wasPressed) {             // start recording
+  if (pressed && !wasPressed) {             // start recording, and streaming if connected
     noInterrupts(); clipLen = 0; highNibble = false; predictor = 0; stepIndex = 0; recording = true; interrupts();
     setLed(LEDB, true);
     buttonChar.writeValue(1);
+    streaming = connected;
+    nextSeq = 0;
+    if (streaming) sendStart();
     Serial.println("recording...");
   }
-  if (!pressed && wasPressed) {             // stop and send
+  if (recording && streaming && (nextSeq + 1) * DATA_MAX <= clipLen && millis() - lastSendAt >= PACKET_GAP_MS) {
+    sendData(nextSeq, clipLen);             // a full packet is ready: stream it
+    nextSeq++;
+  }
+  if (!pressed && wasPressed) {             // stop and finish sending
     noInterrupts(); recording = false; int total = clipLen; interrupts();
     setLed(LEDB, false);
     buttonChar.writeValue(0);
     Serial.print("recorded "); Serial.print(total); Serial.print(" bytes (");
     Serial.print(total * 2.0 / SAMPLE_RATE, 1); Serial.println(" s)");
     lastTotal = total;
-    if (connected && total > 0) sendClip(total);
-    else Serial.println("not connected: clip not sent");
+    if (connected && total > 0) finishClip(total);
+    else { streaming = false; Serial.println("not connected: clip not sent"); }
   }
   if (resendChar.written()) handleResend();
   if (recording && clipLen >= CLIP_MAX) setLed(LEDR, true); else setLed(LEDR, false);  // red = clip full
-  wasPressed = pressed;
-  delay(5);
+  delay(1);
 }

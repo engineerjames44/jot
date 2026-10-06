@@ -38,6 +38,8 @@ final class JotDevice: NSObject {
     @ObservationIgnored private var resendCharacteristic: CBCharacteristic?
     /// Asks again if a clip goes quiet before it's complete (a lost END).
     @ObservationIgnored private var stallTask: Task<Void, Never>?
+    @ObservationIgnored private var lastPacketAt = Date.distantPast
+    @ObservationIgnored private var releasedAt: Date?
 
     var isEnabled: Bool { status != .off }
 
@@ -63,6 +65,7 @@ final class JotDevice: NSObject {
         peripheral = nil
         resendCharacteristic = nil
         stallTask?.cancel()
+        stallTask = nil
         assembler = ClipAssembler()
         status = .off
         packetLimit = nil
@@ -89,8 +92,12 @@ final class JotDevice: NSObject {
     }
 
     private func handleButton(_ value: Data) {
-        // Release is ignored: the clip arriving is what ends the capture.
-        guard value.first == 1 else { return }
+        // Release doesn't end the capture: the rest of the clip arriving does.
+        guard value.first == 1 else {
+            releasedAt = .now
+            return
+        }
+        releasedAt = nil
         capture.beginDeviceCapture(from: source)
     }
 
@@ -100,6 +107,7 @@ final class JotDevice: NSObject {
             largestPacket = 0
         }
         largestPacket = max(largestPacket, packet.count)
+        lastPacketAt = .now
         handle(assembler.receive(packet))
         watchForStall()
     }
@@ -113,30 +121,36 @@ final class JotDevice: NSObject {
             peripheral.writeValue(ClipAssembler.resendRequest(packets), for: resendCharacteristic, type: .withResponse)
         case .finished(let adpcm, let sampleRate):
             stallTask?.cancel()
+            stallTask = nil
             let samples = IMAADPCM.decode(adpcm)
             let seconds = Double(samples.count) / Double(max(sampleRate, 1))
-            let ms = Int((clipStartedAt.map { Date.now.timeIntervalSince($0) } ?? 0) * 1000)
+            let ms = Int((releasedAt.map { Date.now.timeIntervalSince($0) } ?? 0) * 1000)
             lastClip = String(
-                format: "%.1f s of audio, %d bytes in %d ms, %d resend rounds",
-                seconds, adpcm.count, ms, assembler.rounds
+                format: "%.1f s of audio, complete %d ms after release, %d resend rounds",
+                seconds, ms, assembler.rounds
             )
             source.deliver(samples, sampleRate: sampleRate)
             capture.endDeviceCapture(source)
         case .failed(let reason):
             stallTask?.cancel()
+            stallTask = nil
             lastClip = "Clip failed: \(reason). Largest packet \(largestPacket) bytes."
             capture.failDeviceCapture(source)
         }
     }
 
+    /// One check loop per clip: after 0.6 s with no packets, ask for END again.
     private func watchForStall() {
-        stallTask?.cancel()
-        guard assembler.isActive else { return }
+        guard assembler.isActive, stallTask == nil else { return }
         stallTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.5))
-            guard let self, !Task.isCancelled else { return }
-            self.handle(self.assembler.stalled())
-            self.watchForStall()
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(200))
+                guard let self, !Task.isCancelled, self.assembler.isActive else { break }
+                if Date.now.timeIntervalSince(self.lastPacketAt) > 0.6 {
+                    self.lastPacketAt = .now
+                    self.handle(self.assembler.stalled())
+                }
+            }
         }
     }
 }
@@ -179,6 +193,7 @@ extension JotDevice: @preconcurrency CBCentralManagerDelegate {
         packetLimit = nil
         resendCharacteristic = nil
         stallTask?.cancel()
+        stallTask = nil
         assembler = ClipAssembler()
         capture.failDeviceCapture(source)
         scan()
