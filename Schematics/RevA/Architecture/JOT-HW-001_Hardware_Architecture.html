@@ -10,7 +10,7 @@
   @page {
     size: Letter;
     margin: 0.75in 0.85in 0.8in;
-    @bottom-left { content: "Jot Rev A  |  Hardware Architecture  |  JOT-HW-001  |  Draft 3"; font: 8pt Helvetica, Arial, sans-serif; color: #777; }
+    @bottom-left { content: "Jot Rev A  |  Hardware Architecture  |  JOT-HW-001  |  Draft 4"; font: 8pt Helvetica, Arial, sans-serif; color: #777; }
     @bottom-right { content: "Page " counter(page); font: 8pt Helvetica, Arial, sans-serif; color: #777; }
   }
   :root { --ink: #1b1b1f; --muted: #5f6066; --rule: #d4d4da; --head: #ececf1; }
@@ -42,7 +42,7 @@
 
 <table class="meta">
   <tr><td>Document</td><td>JOT-HW-001</td></tr>
-  <tr><td>Revision</td><td>Rev A architecture, draft 3</td></tr>
+  <tr><td>Revision</td><td>Rev A architecture, draft 4</td></tr>
   <tr><td>Author</td><td>James Cronin</td></tr>
   <tr><td>Date</td><td>2 October 2026</td></tr>
   <tr><td>Status</td><td>Architecture agreed; parts selected and verified against datasheets; schematic capture next</td></tr>
@@ -118,7 +118,7 @@
   </g>
   <g font-size="8.5" fill="#444">
     <text x="80" y="51">USBLC6 ESD, 5.1k CC</text>
-    <text x="261" y="51">BQ25101, ~200 mA</text>
+    <text x="261" y="51">MCP73831, ~200 mA</text>
     <text x="441" y="51">400 mAh, protected</text>
     <text x="621" y="51">MAX17048</text>
     <text x="261" y="161">TPS7A0233, 25 nA Iq</text>
@@ -158,7 +158,8 @@
 <p>HRO TYPE-C-31-M-12 receptacle. Supplies 5 V for charging and carries USB data to the nRF52840. Two 5.1 kΩ resistors on the CC pins tell a USB-C charger to supply power; without them many chargers supply nothing. A USBLC6-2SC6 ESD protection part sits on the data lines because the connector is the part people touch. The module's VBUS pin is fed through a 2.2 Ω series resistor (R14), as the nRF52840 Product Specification recommends for new designs, with 10 µF to ground.</p>
 
 <h3>4.2 Charger</h3>
-<p>TI BQ25101 single-cell LiPo charger. It stops at 4.2 V. A 680 Ω ISET resistor sets the charge current to about 200 mA (K<sub>ISET</sub> 135 AΩ / 680 Ω), which is 0.5C for the 400 mAh cell. TS goes to ground through 10 kΩ, TI's connection when no thermistor is used. The open-drain CHG pin drives the green charge LED directly, so charging is visible even if the firmware is not running. The system load runs from the battery rail, as on the XIAO nRF52840.</p>
+<p>Microchip MCP73831T-2ACI/OT single-cell LiPo charger in SOT-23-5. It stops at 4.2 V. A 5.1 kΩ PROG resistor sets the charge current to about 196 mA (I<sub>REG</sub> = 1000 V / R<sub>PROG</sub>), which is 0.5C for the 400 mAh cell. VDD and VBAT each have 4.7 µF, the datasheet minimum for stability when no battery is connected. The tri-state STAT pin pulls the green charge LED low while charging, so charging is visible even if the firmware is not running. There is no battery-temperature input; the pack has no thermistor. The system load runs from the battery rail, as on the XIAO nRF52840.</p>
+<p>Draft 3 used a TI BQ25101. Its DSBGA package has 0.4 mm ball pitch, below the 0.5 mm minimum of JLCPCB's Economic assembly (Standard assembly needs a 70 × 70 mm panel), and it cannot be reworked by hand on a first board, so it was replaced before footprints were assigned.</p>
 
 <h3>4.3 LiPo battery</h3>
 <p>Adafruit 3898: one 3.7 V, 400 mAh lithium-polymer cell (about 36 × 17 × 7.8 mm) with its own protection circuit and a JST-PH lead. This is above the 150 to 350 mAh range first expected, so its fit must be confirmed when the case is designed. Check the lead polarity against the J2 footprint before first power-up: JST-PH polarity is not consistent between battery vendors.</p>
@@ -176,13 +177,13 @@
 <p>Mic 1 is a TDK T3902 bottom-port PDM MEMS microphone (64 dBA SNR, 1.65 to 3.63 V). It replaced the planned Infineon IM69D130 (69 dB SNR) because the T3902 is stocked at LCSC. Bottom port means the sound enters through a hole in the PCB under the mic; this fixes which board face points at the case opening. Mic 1's SELECT pin is grounded (right channel). A footprint for Mic 2 shares the same two PDM wires with SELECT tied high (left channel) and is not populated on Rev A (DNP). Both mics and the Rec LED are powered from a switched rail: an AO3401A P-MOSFET with a 100 kΩ gate pull-up, so the rail is off by default and on when the GPIO drives low. Firmware should release the PDM clock pin while the rail is off.</p>
 
 <h3>4.8 Storage</h3>
-<p>Winbond W25Q01JVZEIQ: 1 Gbit (128 MB) NOR flash on QSPI, WSON-8 8 × 6 mm, quad mode enabled at the factory. It is two stacked 512 Mbit dies with linear 4-byte addressing; each die reports its own BUSY bit. Recordings are written here first and deleted once the phone confirms it has them.</p>
+<p>Winbond W25Q01JVZEIQ: 1 Gbit (128 MB) NOR flash on QSPI, WSON-8 8 × 6 mm, quad mode enabled at the factory. It is two stacked 512 Mbit dies with linear 4-byte addressing; each die reports its own BUSY bit. A 100 kΩ pull-up holds chip-select high while the nRF52840 powers up or resets, as Winbond requires. Recordings are written here first and deleted once the phone confirms it has them.</p>
 
 <h3>4.9 Sensors on I2C</h3>
 <p>LIS2DW12 low-power accelerometer (address 0x19, SA0 tied high: its internal pull-up cannot be switched off, so tying it low would draw about 150 µA): detects raise-to-wake, double-tap, and shake in hardware and signals the nRF52840 on an interrupt pin, so the main chip can stay asleep. DRV2605L haptic driver (address 0x5A), powered from the battery with 1 µF on VDD and on REG, drives a Vybronics VG0832012 LRA (8 mm coin, 235 Hz, 1.8 Vrms) for crisp taps from a built-in effect library. Both share the I2C bus with the fuel gauge; one pair of 4.7 kΩ pull-ups serves the whole bus.</p>
 
 <h3>4.10 UI</h3>
-<p>Side button: TS-1010-C-A right-angle tactile switch to ground, using the internal pull-up; it is also the wake source. Rec LED: red 0603 on the mic rail through 1 kΩ. RGB status LED: common-anode 1615 RGB with the anode on the battery rail. Each cathode is switched to ground by an AO3400A (gate from a PWM pin, 100 kΩ pull-down) through 1 kΩ (red) and 560 Ω (green, blue), about 2 mA at 3.7 V. Green and blue need about 2.6 V at 2 mA (up to about 3.0 V worst case), and the 3.3 V rail falls to about 3.0 V as the battery empties, so driving them from a 3.3 V pin left no headroom whatever the resistor; from the battery they stay lit down to 3.0 V, and no GPIO sees the battery voltage. Draft 2 drove a common-cathode TJ-S1615 from GPIOs through 100 Ω, which does not fix the headroom. Buzzer: MLT-5020 magnetic buzzer, 4 kHz, from the battery rail through an AO3400A low-side MOSFET with a 1N4148W flyback diode, for confirmation tones and a find-my-Jot feature.</p>
+<p>Side button: TS-1010-C-A right-angle tactile switch to ground, using the internal pull-up; it is also the wake source. Rec LED: red 0603 on the mic rail through 1 kΩ. RGB status LED: common-anode 1615 RGB with the anode on the battery rail. Each cathode is switched to ground by an AO3400A (gate from a PWM pin, 100 kΩ pull-down) through 1 kΩ (red) and 560 Ω (green, blue), about 2 mA at 3.7 V. Green and blue need about 2.6 V at 2 mA (up to about 3.0 V worst case), and the 3.3 V rail falls to about 3.0 V as the battery empties, so driving them from a 3.3 V pin left no headroom whatever the resistor; from the battery they stay lit down to 3.0 V, and no GPIO sees the battery voltage. Draft 2 drove a common-cathode TJ-S1615 from GPIOs through 100 Ω, which does not fix the headroom. Buzzer: MLT-5020 magnetic buzzer, 4 kHz, from the battery rail through a 10 Ω series resistor (the buzzer is rated 2 to 4 V and the battery reaches 4.2 V) and an AO3400A low-side MOSFET, with a 1N4148W flyback diode across the buzzer, for confirmation tones and a find-my-Jot feature.</p>
 
 <h3>4.11 NFC</h3>
 <p>The nRF52840 has an NFC tag built in. Rev A adds a coil antenna drawn in copper on the PCB and two equal tuning capacitors (C0G, 0402) from NFC1 and NFC2 to ground, forming an LC tank tuned to 13.56 MHz. Tapping Jot to the iPhone can open the app or start pairing. The tuning follows Nordic white paper nWP-026 (in <code>Datasheets/NFC/</code>):</p>
@@ -240,7 +241,7 @@
   <tr><td>1</td><td>Confirm the mic port type and LCSC stock</td><td class="done">Done</td><td>TDK T3902 (bottom port, LCSC C3171752)</td></tr>
   <tr><td>2</td><td>Pick the module and confirm it exposes the QSPI, USB, and NFC pins</td><td class="done">Done</td><td>Raytac MDBT50Q-1MV2; all pins confirmed against its datasheet. Not stocked at LCSC: buy from DigiKey/Mouser</td></tr>
   <tr><td>3</td><td>Pick the 128 MB flash part and confirm the Zephyr driver supports its 4-byte addressing</td><td class="open">Part done</td><td>W25Q01JVZEIQ chosen. Confirm Zephyr 4-byte addressing and per-die BUSY polling during firmware bring-up</td></tr>
-  <tr><td>4</td><td>Select charger and LDO from in-stock LCSC parts</td><td class="done">Done</td><td>BQ25101 (C478468), TPS7A0233 (C2887324)</td></tr>
+  <tr><td>4</td><td>Select charger and LDO from in-stock LCSC parts</td><td class="done">Done</td><td>MCP73831T-2ACI/OT (C424093), TPS7A0233 (C2887324). The BQ25101 was dropped in draft 4: its 0.4 mm BGA is below JLCPCB Economic assembly limits.</td></tr>
   <tr><td>5</td><td>Choose the LRA size to fit the case</td><td class="open">Part done</td><td>Vybronics VG0832012 (8 mm); confirm fit in the case</td></tr>
   <tr><td>6</td><td>Battery capacity and dimensions (set by the case)</td><td class="open">Part done</td><td>Adafruit 3898, 400 mAh, 36 × 17 × 7.8 mm; confirm fit and lead polarity</td></tr>
   <tr><td>7</td><td>Assign every signal to a module pin (pin map)</td><td class="done">Done</td><td>See <code>BOM/Jot_RevA_Pin_List.xlsx</code></td></tr>
@@ -255,6 +256,7 @@
   <tr><td>1</td><td>October 2026</td><td>First architecture.</td></tr>
   <tr><td>2</td><td>2 October 2026</td><td>Parts selected and checked against datasheets; mic changed to TDK T3902; external LDO confirmed (REG0 unused); R14 and 10 µF decoupling added; QSPI pin note corrected; NFC tuning method added.</td></tr>
   <tr><td>3</td><td>3 October 2026</td><td>Crystal load-cap calculation written out with board stray; RGB LED moved to the battery rail with low-side FETs; mic footprint checked against the T3902 datasheet; power budget and bring-up plan added. 4 October: accelerometer address changed to 0x19 (SA0 high) to avoid current through its internal pull-up.</td></tr>
+  <tr><td>4</td><td>5 October 2026</td><td>Charger changed from TI BQ25101 (0.4 mm-pitch DSBGA, not assemblable by JLCPCB Economic PCBA) to Microchip MCP73831 in SOT-23-5 with a 5.1 kΩ PROG resistor and 4.7 µF on VDD and VBAT. Schematic review (4 October) added a 100 kΩ pull-up on the flash chip-select and a 10 Ω resistor in series with the buzzer.</td></tr>
 </table>
 
 </body>
