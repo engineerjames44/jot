@@ -68,9 +68,12 @@ struct InboxView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center) {
+                JotStatusBadge()
                 Text("Everything you've said")
                     .font(.jotSection)
                     .foregroundStyle(Color.jotTextSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Spacer()
                 ProfileBadge()
             }

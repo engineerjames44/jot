@@ -40,11 +40,15 @@ struct ProfileBadge: View {
 
 // MARK: - Bottom bar
 
-/// Today and Inbox either side of the orb. While recording only the orb stays.
+/// Today and Inbox either side of the orb (and Develop, in debug builds).
+/// While recording only the orb stays.
 struct BottomBar: View {
     @Environment(CaptureController.self) private var capture
     @Environment(\.currentScreen) private var current
     @Environment(\.selectScreen) private var select
+    #if DEBUG
+    @AppStorage(DevMode.enabledKey) private var devModeEnabled = DevMode.defaultEnabled
+    #endif
 
     var body: some View {
         let live = capture.phase.isBusy
@@ -52,8 +56,18 @@ struct BottomBar: View {
         ZStack {
             HStack(spacing: 0) {
                 tab(.today, title: "Today", symbol: "sun.max.fill")
-                Spacer(minLength: CaptureOrb.orbSize + 40)
-                tab(.inbox, title: "Inbox", symbol: "tray.full.fill")
+                    .frame(maxWidth: .infinity)
+                Color.clear.frame(width: CaptureOrb.orbSize + 40)
+                // Equal halves keep the orb centred whatever's on the right.
+                HStack(spacing: 0) {
+                    tab(.inbox, title: "Inbox", symbol: "tray.full.fill")
+                    #if DEBUG
+                    if devModeEnabled {
+                        tab(.develop, title: "Develop", symbol: "hammer.fill")
+                    }
+                    #endif
+                }
+                .frame(maxWidth: .infinity)
             }
             .padding(.horizontal, 8)
             .frame(height: 64)

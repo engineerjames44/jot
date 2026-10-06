@@ -395,9 +395,12 @@ private struct TodayHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .center) {
+                JotStatusBadge()
                 Text(now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
                     .font(.jotSection)
                     .foregroundStyle(Color.jotTextSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Spacer()
                 ProfileBadge()
             }

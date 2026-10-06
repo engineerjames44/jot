@@ -20,6 +20,14 @@ final class JotDevice: NSObject {
     static let buttonID = CBUUID(string: "15619899-b8cd-4254-97ff-0c757fa68b3d")
     static let audioID = CBUUID(string: "18d71983-6ed1-441e-bdd3-80fe9e1b1529")
     static let resendID = CBUUID(string: "6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41")
+    static let statusID = CBUUID(string: "0d4a7b8e-5c21-4f3a-8e6d-2b9c1a7f4e53")
+
+    /// Jot's battery, from its status characteristic.
+    struct Battery: Equatable {
+        var percent: Int
+        var isCharging: Bool
+        var millivolts: Int
+    }
     private static let enabledKey = "JotDeviceEnabled"
 
     private(set) var status: Status = .off
@@ -27,6 +35,8 @@ final class JotDevice: NSObject {
     private(set) var lastClip: String?
     /// The most audio bytes one notification can carry on this connection.
     private(set) var packetLimit: Int?
+    /// Nil until the device reports it (older firmware never does).
+    private(set) var battery: Battery?
 
     private let source = BLEAudioSource()
     private let capture: CaptureController
@@ -69,6 +79,7 @@ final class JotDevice: NSObject {
         assembler = ClipAssembler()
         status = .off
         packetLimit = nil
+        battery = nil
         capture.failDeviceCapture(source)
     }
 
@@ -191,6 +202,7 @@ extension JotDevice: @preconcurrency CBCentralManagerDelegate {
     ) {
         self.peripheral = nil
         packetLimit = nil
+        battery = nil
         resendCharacteristic = nil
         stallTask?.cancel()
         stallTask = nil
@@ -203,7 +215,7 @@ extension JotDevice: @preconcurrency CBCentralManagerDelegate {
 extension JotDevice: @preconcurrency CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         guard let service = peripheral.services?.first(where: { $0.uuid == Self.serviceID }) else { return }
-        peripheral.discoverCharacteristics([Self.buttonID, Self.audioID, Self.resendID], for: service)
+        peripheral.discoverCharacteristics([Self.buttonID, Self.audioID, Self.resendID, Self.statusID], for: service)
     }
 
     func peripheral(
@@ -212,8 +224,10 @@ extension JotDevice: @preconcurrency CBPeripheralDelegate {
         error: (any Error)?
     ) {
         let characteristics = service.characteristics ?? []
-        for characteristic in characteristics where characteristic.uuid == Self.buttonID || characteristic.uuid == Self.audioID {
+        let subscribed: Set<CBUUID> = [Self.buttonID, Self.audioID, Self.statusID]
+        for characteristic in characteristics where subscribed.contains(characteristic.uuid) {
             peripheral.setNotifyValue(true, for: characteristic)
+            if characteristic.uuid == Self.statusID { peripheral.readValue(for: characteristic) }
         }
         resendCharacteristic = characteristics.first { $0.uuid == Self.resendID }
         if characteristics.contains(where: { $0.uuid == Self.audioID }), resendCharacteristic != nil {
@@ -234,6 +248,13 @@ extension JotDevice: @preconcurrency CBPeripheralDelegate {
             handleButton(value)
         } else if characteristic.uuid == Self.audioID {
             handleAudio(value)
+        } else if characteristic.uuid == Self.statusID, value.count >= 4 {
+            let bytes = [UInt8](value)
+            battery = Battery(
+                percent: Int(bytes[0]),
+                isCharging: bytes[1] & 1 != 0,
+                millivolts: Int(bytes[2]) | Int(bytes[3]) << 8
+            )
         }
     }
 }

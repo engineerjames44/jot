@@ -12,6 +12,8 @@
 //     START  01 | codec u8 (1 = IMA ADPCM) | sample rate u16 LE | total bytes u32 LE
 //     DATA   02 | packet number u16 LE (from 0) | up to 125 bytes of ADPCM
 //     END    03 | packet count u16 LE | total bytes u32 LE
+//   Status (read/notify) 0d4a7b8e-5c21-4f3a-8e6d-2b9c1a7f4e53   battery, every 10 s and on change:
+//     percent u8 | flags u8 (bit 0 = charging) | millivolts u16 LE
 //   Resend  (write)   6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41   from the phone, after an END:
 //     04 | count u8 (0-60) | packet numbers u16 LE...   resends those packets, then END again
 //   Audio streams while the button is held, one packet every PACKET_GAP_MS (sent flat
@@ -33,6 +35,7 @@ const int DATA_MAX = PACKET_MAX - 3;
 BLEService jotService("a5bc1576-7c64-4efe-9c40-2b39fdf53bed");
 BLEByteCharacteristic buttonChar("15619899-b8cd-4254-97ff-0c757fa68b3d", BLERead | BLENotify);
 BLECharacteristic audioChar("18d71983-6ed1-441e-bdd3-80fe9e1b1529", BLENotify, PACKET_MAX, false);
+BLECharacteristic statusChar("0d4a7b8e-5c21-4f3a-8e6d-2b9c1a7f4e53", BLERead | BLENotify, 4, true);
 BLECharacteristic resendChar("6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41", BLEWrite, PACKET_MAX, false);
 
 uint8_t clip[CLIP_MAX];
@@ -91,8 +94,49 @@ void onPDMdata() {
 
 void setLed(int pin, bool on) { digitalWrite(pin, on ? LOW : HIGH); }  // active-low LEDs
 
+// Hardware watchdog: if the loop ever stops feeding it for 8 s, the XIAO resets itself.
+void startWatchdog() {
+  NRF_WDT->CONFIG = (WDT_CONFIG_SLEEP_Run << WDT_CONFIG_SLEEP_Pos) | (WDT_CONFIG_HALT_Pause << WDT_CONFIG_HALT_Pos);
+  NRF_WDT->CRV = 8 * 32768;
+  NRF_WDT->RREN = WDT_RREN_RR0_Msk;
+  NRF_WDT->TASKS_START = 1;
+}
+void feedWatchdog() { NRF_WDT->RR[0] = WDT_RR_RR_Reload; }
+
+// ---- battery ----
+// XIAO: battery through a 1M/510k divider to P0.31, enabled by P0.14 LOW. Keep P0.14
+// LOW (driving it HIGH while charging can damage P0.31). Charge status on P0.17, LOW = charging.
+int batteryMillivolts() {
+  long sum = 0;
+  for (int i = 0; i < 8; i++) sum += analogRead(P0_31);
+  return (int)(sum / 8 * 3300L / 1023 * 1510 / 510);
+}
+
+int batteryPercent(int mv) {
+  // Rough LiPo curve at light load.
+  const int volts[] = {3300, 3500, 3600, 3700, 3750, 3800, 3900, 4000, 4100, 4200};
+  const int pct[]   = {   0,    5,   10,   25,   40,   50,   65,   80,   92,  100};
+  if (mv <= volts[0]) return 0;
+  for (int i = 1; i < 10; i++)
+    if (mv <= volts[i]) return pct[i - 1] + (pct[i] - pct[i - 1]) * (mv - volts[i - 1]) / (volts[i] - volts[i - 1]);
+  return 100;
+}
+
+void updateStatus(bool force) {
+  static unsigned long lastAt = 0;
+  static bool lastCharging = false;
+  bool charging = digitalRead(P0_17) == LOW;
+  if (!force && charging == lastCharging && millis() - lastAt < 10000) return;
+  lastAt = millis();
+  lastCharging = charging;
+  int mv = batteryMillivolts();
+  uint8_t p[4] = {(uint8_t)batteryPercent(mv), (uint8_t)(charging ? 1 : 0), (uint8_t)(mv & 0xff), (uint8_t)(mv >> 8)};
+  statusChar.writeValue(p, 4);
+}
+
 bool sendPacket(const uint8_t* data, int len) {
   for (int tries = 0; tries < 200; tries++) {
+    if (!BLE.connected()) return false;     // no phone: don't sit retrying
     if (audioChar.writeValue(data, len)) return true;
     BLE.poll();
     delay(2);
@@ -103,6 +147,7 @@ bool sendPacket(const uint8_t* data, int len) {
 // Waits out the gap since the last packet, then sends.
 bool pacedPacket(const uint8_t* data, int len) {
   while (millis() - lastSendAt < PACKET_GAP_MS) BLE.poll();
+  feedWatchdog();
   lastSendAt = millis();
   return sendPacket(data, len);
 }
@@ -155,7 +200,7 @@ void handleResend() {
   if (len < 2 || req[0] != 0x04 || recording || lastTotal == 0) return;
   int count = min((int)req[1], (len - 2) / 2);
   for (int i = 0; i < count; i++) {
-    sendData(req[2 + 2 * i] | (req[3 + 2 * i] << 8), lastTotal);
+    if (!sendData(req[2 + 2 * i] | (req[3 + 2 * i] << 8), lastTotal)) return;
     BLE.poll();
   }
   sendEnd(lastTotal);
@@ -164,6 +209,8 @@ void handleResend() {
 
 void setup() {
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+  pinMode(P0_14, OUTPUT); digitalWrite(P0_14, LOW);   // battery divider on
+  pinMode(P0_17, INPUT);                              // charge status
   pinMode(LEDR, OUTPUT); pinMode(LEDG, OUTPUT); pinMode(LEDB, OUTPUT);
   setLed(LEDR, false); setLed(LEDG, false); setLed(LEDB, false);
   Serial.begin(115200);
@@ -176,21 +223,35 @@ void setup() {
   jotService.addCharacteristic(buttonChar);
   jotService.addCharacteristic(audioChar);
   jotService.addCharacteristic(resendChar);
+  jotService.addCharacteristic(statusChar);
   BLE.addService(jotService);
   buttonChar.writeValue(0);
+  updateStatus(true);
   BLE.advertise();
 
   PDM.onReceive(onPDMdata);
   PDM.setGain(30);
   if (!PDM.begin(1, SAMPLE_RATE)) { Serial.println("Mic failed"); while (true) { setLed(LEDR, true); delay(200); setLed(LEDR, false); delay(200); } }
+  startWatchdog();
   Serial.println("Ready. Connect from the phone, then hold the button and talk.");
 }
 
 void loop() {
+  feedWatchdog();
   BLE.poll();
   BLEDevice central = BLE.central();
   bool connected = central && central.connected();
   setLed(LEDG, connected && !recording);
+
+  static bool wasConnected = false;
+  if (connected && !wasConnected) { Serial.println("connected"); updateStatus(true); }
+  if (!connected && wasConnected) {         // phone gone: stop sending, advertise again
+    Serial.println("disconnected");
+    streaming = false;
+    BLE.advertise();
+  }
+  wasConnected = connected;
+  if (!recording) updateStatus(false);
 
   // Debounced button.
   static bool pressed = false;
@@ -211,8 +272,8 @@ void loop() {
     Serial.println("recording...");
   }
   if (recording && streaming && (nextSeq + 1) * DATA_MAX <= clipLen && millis() - lastSendAt >= PACKET_GAP_MS) {
-    sendData(nextSeq, clipLen);             // a full packet is ready: stream it
-    nextSeq++;
+    if (sendData(nextSeq, clipLen)) nextSeq++;   // a full packet is ready: stream it
+    else streaming = false;                      // phone gone: finish later if it's back
   }
   if (!pressed && wasPressed) {             // stop and finish sending
     noInterrupts(); recording = false; int total = clipLen; interrupts();

@@ -48,6 +48,17 @@ struct RootView: View {
                     .environment(\.isActiveTab, screen == .inbox)
                     .toolbar(.hidden, for: .tabBar)
             }
+            #if DEBUG
+            if devModeEnabled {
+                Tab("Develop", systemImage: "hammer.fill", value: .develop) {
+                    DevelopView()
+                        .overlay { CaptureStage() }
+                        .safeAreaInset(edge: .bottom) { CaptureDock() }
+                        .environment(\.isActiveTab, screen == .develop)
+                        .toolbar(.hidden, for: .tabBar)
+                }
+            }
+            #endif
         }
         .environment(\.currentScreen, screen)
         .environment(\.selectScreen) { selected in screen = selected }
@@ -110,6 +121,7 @@ struct RootView: View {
             // -JotStartTab inbox|settings|develop: open a tab directly, for screenshots.
             switch UserDefaults.standard.string(forKey: "JotStartTab") {
             case "inbox": screen = .inbox
+            case "develop": screen = .develop
             case "settings": showingSettings = true
             default: break
             }
