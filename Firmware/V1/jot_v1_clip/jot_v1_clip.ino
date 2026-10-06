@@ -20,6 +20,7 @@ const int BUTTON_PIN = D1;
 const int SAMPLE_RATE = 16000;
 const int CLIP_MAX = 120000;            // bytes of ADPCM = 15 s
 const int PACKET_MAX = 128;
+const int PACKET_GAP_MS = 5;            // sending flat out overflows the BLE queue and drops packets
 const int DATA_MAX = PACKET_MAX - 3;
 
 BLEService jotService("a5bc1576-7c64-4efe-9c40-2b39fdf53bed");
@@ -102,6 +103,7 @@ void sendClip(int total) {
     memcpy(p + 3, clip + off, n);
     if (!sendPacket(p, 3 + n)) { Serial.print("DATA failed at packet "); Serial.println(seq); return; }
     BLE.poll();
+    delay(PACKET_GAP_MS);
   }
   p[0] = 0x03; p[1] = seq & 0xff; p[2] = seq >> 8;
   for (int i = 0; i < 4; i++) p[3 + i] = (total >> (8 * i)) & 0xff;
