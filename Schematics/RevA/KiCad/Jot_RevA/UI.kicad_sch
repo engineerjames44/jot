@@ -2742,7 +2742,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Jot:KEY-SMD_TX-1010-X-X"
 			(at 167.64 53.34 0)
 			(hide yes)
 			(show_name no)
@@ -4038,7 +4038,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Jot:BUZ-SMD_L5.0-W5.5-P4.60"
 			(at 99.695 104.14 90)
 			(hide yes)
 			(show_name no)
