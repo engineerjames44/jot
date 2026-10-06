@@ -2364,7 +2364,7 @@
 				)
 			)
 		)
-		(property "Footprint" "LIS2DW12TR:LGA-12_L2.0-W2.0-P0.50-BL"
+		(property "Footprint" "Package_LGA:LGA-12_2x2mm_P0.5mm"
 			(at 166.37 118.11 0)
 			(hide yes)
 			(show_name no)
