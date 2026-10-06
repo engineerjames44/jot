@@ -8,10 +8,14 @@
 // Jot BLE service (the iPhone app uses these IDs):
 //   Service           a5bc1576-7c64-4efe-9c40-2b39fdf53bed
 //   Button  (notify)  15619899-b8cd-4254-97ff-0c757fa68b3d   uint8: 1 pressed, 0 released
-//   Audio (indicate)  18d71983-6ed1-441e-bdd3-80fe9e1b1529   clip packets, max 128 bytes:
+//   Audio   (notify)  18d71983-6ed1-441e-bdd3-80fe9e1b1529   clip packets, max 128 bytes:
 //     START  01 | codec u8 (1 = IMA ADPCM) | sample rate u16 LE | total bytes u32 LE
 //     DATA   02 | packet number u16 LE (from 0) | up to 125 bytes of ADPCM
 //     END    03 | packet count u16 LE | total bytes u32 LE
+//   Resend  (write)   6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41   from the phone, after an END:
+//     04 | count u8 (0-60) | packet numbers u16 LE...   resends those packets, then END again
+//   Packets are sent flat out and the iPhone drops some, so the phone asks again for
+//   whatever is missing until it has the whole clip. The last clip stays in RAM for this.
 
 #include <ArduinoBLE.h>
 #include <PDM.h>
@@ -24,14 +28,14 @@ const int DATA_MAX = PACKET_MAX - 3;
 
 BLEService jotService("a5bc1576-7c64-4efe-9c40-2b39fdf53bed");
 BLEByteCharacteristic buttonChar("15619899-b8cd-4254-97ff-0c757fa68b3d", BLERead | BLENotify);
-// Indications: the phone confirms each packet before the next is sent. Notifications
-// were faster but the iPhone dropped packets under load.
-BLECharacteristic audioChar("18d71983-6ed1-441e-bdd3-80fe9e1b1529", BLEIndicate, PACKET_MAX, false);
+BLECharacteristic audioChar("18d71983-6ed1-441e-bdd3-80fe9e1b1529", BLENotify, PACKET_MAX, false);
+BLECharacteristic resendChar("6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41", BLEWrite, PACKET_MAX, false);
 
 uint8_t clip[CLIP_MAX];
 volatile int clipLen = 0;               // bytes written
 volatile bool highNibble = false;
 volatile bool recording = false;
+int lastTotal = 0;                      // bytes in the last clip, kept for resends
 
 // ---- IMA ADPCM encoder ----
 const int8_t indexTable[16] = {-1, -1, -1, -1, 2, 4, 6, 8, -1, -1, -1, -1, 2, 4, 6, 8};
@@ -89,30 +93,58 @@ bool sendPacket(const uint8_t* data, int len) {
   return false;
 }
 
-void sendClip(int total) {
+bool sendData(int seq, int total) {
   uint8_t p[PACKET_MAX];
+  int off = seq * DATA_MAX;
+  if (off < 0 || off >= total) return true;
+  int n = min(DATA_MAX, total - off);
+  p[0] = 0x02; p[1] = seq & 0xff; p[2] = seq >> 8;
+  memcpy(p + 3, clip + off, n);
+  return sendPacket(p, 3 + n);
+}
+
+void sendEnd(int total) {
+  uint8_t p[7];
+  int count = (total + DATA_MAX - 1) / DATA_MAX;
+  p[0] = 0x03; p[1] = count & 0xff; p[2] = count >> 8;
+  for (int i = 0; i < 4; i++) p[3 + i] = (total >> (8 * i)) & 0xff;
+  sendPacket(p, 7);
+}
+
+void sendClip(int total) {
+  uint8_t p[8];
   unsigned long t0 = millis();
   p[0] = 0x01; p[1] = 1;
   p[2] = SAMPLE_RATE & 0xff; p[3] = SAMPLE_RATE >> 8;
   for (int i = 0; i < 4; i++) p[4 + i] = (total >> (8 * i)) & 0xff;
   if (!sendPacket(p, 8)) { Serial.println("START failed"); return; }
 
-  uint16_t seq = 0;
-  for (int off = 0; off < total; off += DATA_MAX, seq++) {
-    int n = min(DATA_MAX, total - off);
-    p[0] = 0x02; p[1] = seq & 0xff; p[2] = seq >> 8;
-    memcpy(p + 3, clip + off, n);
-    if (!sendPacket(p, 3 + n)) { Serial.print("DATA failed at packet "); Serial.println(seq); return; }
+  int count = (total + DATA_MAX - 1) / DATA_MAX;
+  for (int seq = 0; seq < count; seq++) {
+    if (!sendData(seq, total)) { Serial.print("DATA failed at packet "); Serial.println(seq); return; }
     BLE.poll();
   }
-  p[0] = 0x03; p[1] = seq & 0xff; p[2] = seq >> 8;
-  for (int i = 0; i < 4; i++) p[3 + i] = (total >> (8 * i)) & 0xff;
-  sendPacket(p, 7);
+  sendEnd(total);
 
   unsigned long ms = millis() - t0;
-  Serial.print("Sent "); Serial.print(total); Serial.print(" bytes in "); Serial.print(seq);
+  Serial.print("Sent "); Serial.print(total); Serial.print(" bytes in "); Serial.print(count);
   Serial.print(" packets, "); Serial.print(ms); Serial.print(" ms (");
   Serial.print(ms ? total * 1000UL / ms : 0); Serial.println(" bytes/s)");
+}
+
+// The phone asks for packets it missed: 04 | count | packet numbers u16 LE.
+void handleResend() {
+  int len = resendChar.valueLength();
+  uint8_t req[PACKET_MAX];
+  memcpy(req, resendChar.value(), len);
+  if (len < 2 || req[0] != 0x04 || recording || lastTotal == 0) return;
+  int count = min((int)req[1], (len - 2) / 2);
+  for (int i = 0; i < count; i++) {
+    sendData(req[2 + 2 * i] | (req[3 + 2 * i] << 8), lastTotal);
+    BLE.poll();
+  }
+  sendEnd(lastTotal);
+  Serial.print("Resent "); Serial.print(count); Serial.println(" packets");
 }
 
 void setup() {
@@ -125,9 +157,10 @@ void setup() {
   BLE.setLocalName("Jot");
   BLE.setDeviceName("Jot");
   BLE.setAdvertisedService(jotService);
-  BLE.setConnectionInterval(12, 24);    // ask for 15-30 ms (units of 1.25 ms): each packet waits one round trip
+  BLE.setConnectionInterval(12, 24);    // ask for 15-30 ms (units of 1.25 ms) for faster sending
   jotService.addCharacteristic(buttonChar);
   jotService.addCharacteristic(audioChar);
+  jotService.addCharacteristic(resendChar);
   BLE.addService(jotService);
   buttonChar.writeValue(0);
   BLE.advertise();
@@ -159,9 +192,11 @@ void loop() {
     buttonChar.writeValue(0);
     Serial.print("recorded "); Serial.print(total); Serial.print(" bytes (");
     Serial.print(total * 2.0 / SAMPLE_RATE, 1); Serial.println(" s)");
+    lastTotal = total;
     if (connected && total > 0) sendClip(total);
     else Serial.println("not connected: clip not sent");
   }
+  if (resendChar.written()) handleResend();
   if (recording && clipLen >= CLIP_MAX) setLed(LEDR, true); else setLed(LEDR, false);  // red = clip full
   wasPressed = pressed;
   delay(5);

@@ -83,28 +83,53 @@ struct JotDeviceProtocolTests {
         #expect(result == .finished(adpcm: Data(count: 28544), sampleRate: 16000))
     }
 
-    @Test func failsOnAMissingPacket() {
+    @Test func asksAgainForMissingPackets() {
         var assembler = ClipAssembler()
         _ = assembler.receive(start(total: 6))
         _ = assembler.receive(data(0, [1, 2]))
-        #expect(assembler.receive(data(2, [5, 6])) == .failed("missing packet 1, got 2"))
-        // The rest of the broken clip is ignored.
-        #expect(assembler.receive(end(count: 3, total: 6)) == nil)
+        _ = assembler.receive(data(2, [5, 6]))
+        #expect(assembler.receive(end(count: 3, total: 6)) == .resend([1]))
+        // The device resends packet 1, then END again.
+        _ = assembler.receive(data(1, [3, 4]))
+        #expect(assembler.receive(end(count: 3, total: 6)) == .finished(adpcm: Data([1, 2, 3, 4, 5, 6]), sampleRate: 16000))
+        #expect(assembler.rounds == 1)
     }
 
-    @Test func failsWhenPacketsWereCutShort() {
-        // A small Bluetooth packet size cuts every DATA packet: the totals won't add up.
+    @Test func survivesALostStart() {
+        var assembler = ClipAssembler()
+        _ = assembler.receive(data(0, [1, 2]))
+        #expect(assembler.receive(end(count: 1, total: 2)) == .finished(adpcm: Data([1, 2]), sampleRate: 16000))
+    }
+
+    @Test func asksForEndAfterAStall() {
+        var assembler = ClipAssembler()
+        #expect(assembler.stalled() == nil)
+        _ = assembler.receive(start(total: 2))
+        #expect(assembler.stalled() == .resend([]))
+    }
+
+    @Test func givesUpAfterTooManyRounds() {
+        var assembler = ClipAssembler()
+        _ = assembler.receive(start(total: 4))
+        _ = assembler.receive(data(0, [1, 2]))
+        for _ in 0..<ClipAssembler.maxRounds {
+            #expect(assembler.receive(end(count: 2, total: 4)) == .resend([1]))
+        }
+        #expect(assembler.receive(end(count: 2, total: 4)) == .failed("still missing 1 packets after 12 tries"))
+        #expect(!assembler.isActive)
+    }
+
+    @Test func encodesResendRequests() {
+        #expect(ClipAssembler.resendRequest([4, 300]) == Data([0x04, 2, 4, 0, 0x2C, 0x01]))
+        #expect(ClipAssembler.resendRequest([]) == Data([0x04, 0]))
+    }
+
+    @Test func failsWhenBytesDontAddUp() {
         var assembler = ClipAssembler()
         _ = assembler.receive(start(total: 10))
         _ = assembler.receive(data(0, [1, 2]))
         _ = assembler.receive(data(1, [3, 4]))
-        #expect(assembler.receive(end(count: 2, total: 10)) == .failed("got 4 of 10 bytes in 2 of 2 packets"))
-    }
-
-    @Test func ignoresDataBeforeStart() {
-        var assembler = ClipAssembler()
-        #expect(assembler.receive(data(0, [1])) == nil)
-        #expect(assembler.receive(end(count: 1, total: 1)) == nil)
+        #expect(assembler.receive(end(count: 2, total: 10)) == .failed("got 4 of 10 bytes"))
     }
 
     @Test func normalizesQuietClips() {

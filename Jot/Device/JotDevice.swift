@@ -19,6 +19,7 @@ final class JotDevice: NSObject {
     static let serviceID = CBUUID(string: "a5bc1576-7c64-4efe-9c40-2b39fdf53bed")
     static let buttonID = CBUUID(string: "15619899-b8cd-4254-97ff-0c757fa68b3d")
     static let audioID = CBUUID(string: "18d71983-6ed1-441e-bdd3-80fe9e1b1529")
+    static let resendID = CBUUID(string: "6e0b7c52-2f6a-4d0e-9b8c-3f1d5a7e9c41")
     private static let enabledKey = "JotDeviceEnabled"
 
     private(set) var status: Status = .off
@@ -34,6 +35,9 @@ final class JotDevice: NSObject {
     @ObservationIgnored private var assembler = ClipAssembler()
     @ObservationIgnored private var clipStartedAt: Date?
     @ObservationIgnored private var largestPacket = 0
+    @ObservationIgnored private var resendCharacteristic: CBCharacteristic?
+    /// Asks again if a clip goes quiet before it's complete (a lost END).
+    @ObservationIgnored private var stallTask: Task<Void, Never>?
 
     var isEnabled: Bool { status != .off }
 
@@ -57,6 +61,8 @@ final class JotDevice: NSObject {
         central?.stopScan()
         central = nil
         peripheral = nil
+        resendCharacteristic = nil
+        stallTask?.cancel()
         assembler = ClipAssembler()
         status = .off
         packetLimit = nil
@@ -89,23 +95,48 @@ final class JotDevice: NSObject {
     }
 
     private func handleAudio(_ packet: Data) {
-        largestPacket = max(largestPacket, packet.count)
-        switch assembler.receive(packet) {
-        case .started:
+        if !assembler.isActive {
             clipStartedAt = .now
-            largestPacket = packet.count
+            largestPacket = 0
+        }
+        largestPacket = max(largestPacket, packet.count)
+        handle(assembler.receive(packet))
+        watchForStall()
+    }
+
+    private func handle(_ event: ClipAssembler.Event?) {
+        switch event {
+        case .started, nil:
+            break
+        case .resend(let packets):
+            guard let peripheral, let resendCharacteristic else { return }
+            peripheral.writeValue(ClipAssembler.resendRequest(packets), for: resendCharacteristic, type: .withResponse)
         case .finished(let adpcm, let sampleRate):
+            stallTask?.cancel()
             let samples = IMAADPCM.decode(adpcm)
             let seconds = Double(samples.count) / Double(max(sampleRate, 1))
             let ms = Int((clipStartedAt.map { Date.now.timeIntervalSince($0) } ?? 0) * 1000)
-            lastClip = String(format: "%.1f s of audio, %d bytes in %d ms", seconds, adpcm.count, ms)
+            lastClip = String(
+                format: "%.1f s of audio, %d bytes in %d ms, %d resend rounds",
+                seconds, adpcm.count, ms, assembler.rounds
+            )
             source.deliver(samples, sampleRate: sampleRate)
             capture.endDeviceCapture(source)
         case .failed(let reason):
+            stallTask?.cancel()
             lastClip = "Clip failed: \(reason). Largest packet \(largestPacket) bytes."
             capture.failDeviceCapture(source)
-        case nil:
-            break
+        }
+    }
+
+    private func watchForStall() {
+        stallTask?.cancel()
+        guard assembler.isActive else { return }
+        stallTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard let self, !Task.isCancelled else { return }
+            self.handle(self.assembler.stalled())
+            self.watchForStall()
         }
     }
 }
@@ -146,6 +177,8 @@ extension JotDevice: @preconcurrency CBCentralManagerDelegate {
     ) {
         self.peripheral = nil
         packetLimit = nil
+        resendCharacteristic = nil
+        stallTask?.cancel()
         assembler = ClipAssembler()
         capture.failDeviceCapture(source)
         scan()
@@ -155,7 +188,7 @@ extension JotDevice: @preconcurrency CBCentralManagerDelegate {
 extension JotDevice: @preconcurrency CBPeripheralDelegate {
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: (any Error)?) {
         guard let service = peripheral.services?.first(where: { $0.uuid == Self.serviceID }) else { return }
-        peripheral.discoverCharacteristics([Self.buttonID, Self.audioID], for: service)
+        peripheral.discoverCharacteristics([Self.buttonID, Self.audioID, Self.resendID], for: service)
     }
 
     func peripheral(
@@ -167,11 +200,12 @@ extension JotDevice: @preconcurrency CBPeripheralDelegate {
         for characteristic in characteristics where characteristic.uuid == Self.buttonID || characteristic.uuid == Self.audioID {
             peripheral.setNotifyValue(true, for: characteristic)
         }
-        if characteristics.contains(where: { $0.uuid == Self.audioID }) {
+        resendCharacteristic = characteristics.first { $0.uuid == Self.resendID }
+        if characteristics.contains(where: { $0.uuid == Self.audioID }), resendCharacteristic != nil {
             packetLimit = peripheral.maximumWriteValueLength(for: .withoutResponse)
             status = .connected
         } else {
-            status = .unavailable("This Jot's firmware doesn't send audio. Upload jot_v1_clip.")
+            status = .unavailable("This Jot's firmware doesn't send audio. Upload the latest jot_v1_clip.")
         }
     }
 
