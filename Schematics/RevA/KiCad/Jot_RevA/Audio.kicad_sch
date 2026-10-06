@@ -2546,7 +2546,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "LED_SMD:LED_0603_1608Metric"
 			(at 116.84 100.33 0)
 			(hide yes)
 			(show_name no)
