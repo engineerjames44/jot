@@ -57,9 +57,9 @@ struct BottomBar: View {
             HStack(spacing: 0) {
                 tab(.today, title: "Today", symbol: "sun.max.fill")
                     .frame(maxWidth: .infinity)
-                Color.clear.frame(width: CaptureOrb.orbSize + 40)
+                Color.clear.frame(width: CaptureOrb.orbSize + 24)
                 // Equal halves keep the orb centred whatever's on the right.
-                HStack(spacing: 0) {
+                HStack(spacing: 4) {
                     tab(.inbox, title: "Inbox", symbol: "tray.full.fill")
                     #if DEBUG
                     if devModeEnabled {
@@ -88,12 +88,17 @@ struct BottomBar: View {
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: symbol)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
+                    .frame(width: 26, height: 22)
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: selected ? .bold : .semibold, design: .rounded))
+                    .lineLimit(1)
+                    .fixedSize()
             }
-            .foregroundStyle(selected ? Color.jotTextPrimary : Color.jotTextSecondary)
-            .frame(maxWidth: .infinity)
+            // Same size for every tab; the current one sits in an orange pill.
+            .foregroundStyle(selected ? Color.jotAccentText : Color.jotTextSecondary)
+            .frame(width: 64, height: 50)
+            .background(Color.jotAccent.opacity(selected ? 0.18 : 0), in: .capsule)
             .frame(height: 56)
             .contentShape(.rect)
         }
