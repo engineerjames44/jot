@@ -1,4 +1,4 @@
-// Jot V1, step 3: button test on the XIAO nRF52840 Sense.
+// Jot Prototype One, step 3: button test on the XIAO nRF52840 Sense.
 // Button between D1 and GND (one top leg, one bottom leg). No resistor:
 // the chip's internal pull-up holds D1 HIGH, pressing pulls it LOW.
 // While the button is held, the XIAO's built-in LED lights up blue.

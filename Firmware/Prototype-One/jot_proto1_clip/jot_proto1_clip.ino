@@ -1,4 +1,4 @@
-// Jot V1, step 5b: record a clip while the button is held, send it over BLE on release.
+// Jot Prototype One, step 5b: record a clip while the button is held, send it over BLE on release.
 // XIAO nRF52840 Sense, Seeed nRF52 mbed-enabled core, ArduinoBLE library.
 //
 // Audio: built-in PDM mic, 16 kHz mono, compressed with IMA ADPCM (4 bits per sample,

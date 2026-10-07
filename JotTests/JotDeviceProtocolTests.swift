@@ -5,7 +5,7 @@ import Testing
 struct JotDeviceProtocolTests {
     // MARK: - IMA ADPCM
 
-    /// The firmware's encoder (Firmware/V1/jot_v1_clip), ported so the decoder
+    /// The firmware's encoder (Firmware/Prototype-One/jot_proto1_clip), ported so the decoder
     /// can be checked against it.
     private func encode(_ samples: [Int16]) -> Data {
         var predictor = 0, index = 0

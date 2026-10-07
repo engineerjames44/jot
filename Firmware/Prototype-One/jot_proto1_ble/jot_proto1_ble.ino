@@ -1,4 +1,4 @@
-// Jot V1, step 4: Bluetooth button on the XIAO nRF52840 Sense.
+// Jot Prototype One, step 4: Bluetooth button on the XIAO nRF52840 Sense.
 // Advertises as "Jot". The iPhone subscribes to the button characteristic and
 // gets 1 when the button is pressed and 0 when it's released.
 // Needs the ArduinoBLE library (Library Manager).

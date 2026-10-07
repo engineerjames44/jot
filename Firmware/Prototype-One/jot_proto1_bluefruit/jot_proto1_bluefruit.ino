@@ -1,6 +1,6 @@
-// Jot V1: hold the button to record, the clip streams to the iPhone over BLE.
+// Jot Prototype One: hold the button to record, the clip streams to the iPhone over BLE.
 // XIAO nRF52840 Sense on the "Seeed nRF52 Boards" core (not mbed), Bluefruit library.
-// Same BLE service and packets as jot_v1_clip (the ArduinoBLE version), so the app is
+// Same BLE service and packets as jot_proto1_clip (the ArduinoBLE version), so the app is
 // unchanged. Bluefruit waits for a free radio buffer instead of dropping packets, and
 // asks for a bigger, faster link (2M PHY, longer packets).
 //

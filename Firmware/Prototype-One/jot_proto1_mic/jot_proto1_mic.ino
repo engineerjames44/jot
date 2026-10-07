@@ -1,4 +1,4 @@
-// Jot V1, step 5a: microphone check on the XIAO nRF52840 Sense.
+// Jot Prototype One, step 5a: microphone check on the XIAO nRF52840 Sense.
 // While the button is held, the built-in PDM mic records at 16 kHz and the
 // sound level (RMS) is printed to the Serial Monitor about 10 times a second.
 // Talk while holding the button: the numbers should jump. Release: it stops.

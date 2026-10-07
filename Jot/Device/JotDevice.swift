@@ -15,7 +15,7 @@ final class JotDevice: NSObject {
         case connected
     }
 
-    // The Jot BLE service and characteristics (see Firmware/V1/jot_v1_clip).
+    // The Jot BLE service and characteristics (see Firmware/Prototype-One/jot_proto1_clip).
     static let serviceID = CBUUID(string: "a5bc1576-7c64-4efe-9c40-2b39fdf53bed")
     static let buttonID = CBUUID(string: "15619899-b8cd-4254-97ff-0c757fa68b3d")
     static let audioID = CBUUID(string: "18d71983-6ed1-441e-bdd3-80fe9e1b1529")
@@ -234,7 +234,7 @@ extension JotDevice: @preconcurrency CBPeripheralDelegate {
             packetLimit = peripheral.maximumWriteValueLength(for: .withoutResponse)
             status = .connected
         } else {
-            status = .unavailable("This Jot's firmware doesn't send audio. Upload the latest jot_v1_clip.")
+            status = .unavailable("This Jot's firmware doesn't send audio. Upload the latest jot_proto1_clip.")
         }
     }
 
