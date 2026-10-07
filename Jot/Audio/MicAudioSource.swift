@@ -3,7 +3,10 @@
 /// Captures audio from the device microphone with `AVAudioEngine`.
 @MainActor
 final class MicAudioSource: AudioSource {
-    private let engine = AVAudioEngine()
+    /// A new engine for every recording, made after the session is set to
+    /// record: an input node first touched outside that (or reused after a
+    /// route change) can report no input, which kept failing until relaunch.
+    private var engine: AVAudioEngine?
     private var continuation: AsyncStream<AudioChunk>.Continuation?
 
     func start() async throws -> AsyncStream<AudioChunk> {
@@ -19,9 +22,12 @@ final class MicAudioSource: AudioSource {
         try session.setActive(true)
         #endif
 
+        let engine = AVAudioEngine()
+        self.engine = engine
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         guard format.sampleRate > 0, format.channelCount > 0 else {
+            stop()
             throw AudioSourceError.unavailable("no microphone input")
         }
 
@@ -40,10 +46,11 @@ final class MicAudioSource: AudioSource {
     }
 
     func stop() {
-        if engine.isRunning {
-            engine.stop()
+        if let engine {
+            if engine.isRunning { engine.stop() }
+            engine.inputNode.removeTap(onBus: 0)
         }
-        engine.inputNode.removeTap(onBus: 0)
+        engine = nil
         continuation?.finish()
         continuation = nil
 
