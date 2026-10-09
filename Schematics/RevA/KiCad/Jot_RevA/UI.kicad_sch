@@ -1918,6 +1918,16 @@
 	)
 	(wire
 		(pts
+			(xy 149.86 48.26) (xy 162.56 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "40dab0ed-56a3-4402-998c-bdb0a826fedf")
+	)
+	(wire
+		(pts
 			(xy 251.46 106.68) (xy 251.46 109.22)
 		)
 		(stroke
@@ -2058,6 +2068,16 @@
 	)
 	(wire
 		(pts
+			(xy 134.62 48.26) (xy 142.24 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7fd09570-2f45-4398-b660-0817a33ba49e")
+	)
+	(wire
+		(pts
 			(xy 97.79 109.22) (xy 97.79 115.57)
 		)
 		(stroke
@@ -2125,16 +2145,6 @@
 			(type default)
 		)
 		(uuid "ae45b1e5-e510-4443-b538-a884d6de469c")
-	)
-	(wire
-		(pts
-			(xy 146.05 48.26) (xy 162.56 48.26)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "aea3ed8b-a676-4724-a15f-d99bea0386ef")
 	)
 	(wire
 		(pts
@@ -2246,7 +2256,7 @@
 	)
 	(global_label "BTN"
 		(shape output)
-		(at 146.05 48.26 180)
+		(at 134.62 48.26 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -2256,7 +2266,7 @@
 		)
 		(uuid "85f9cc93-eb2d-4b16-84e2-ea384d993d54")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 139.4967 48.26 0)
+			(at 128.0667 48.26 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3289,6 +3299,86 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:R")
+		(at 146.05 48.26 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "87b670bf-8550-4947-9e1b-0705c15011f6")
+		(property "Reference" "R5"
+			(at 146.05 41.91 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "1k"
+			(at 146.05 44.45 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+			(at 146.05 46.482 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 146.05 48.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 146.05 48.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "6f2804cd-2455-4370-abca-13bc5a68b923")
+		)
+		(pin "1"
+			(uuid "f944e219-e639-4006-94ff-1a20d1a2664f")
+		)
+		(instances
+			(project "Jot_RevA"
+				(path "/61747270-9f90-47b6-9c50-5ea1f41f259a/32fe5d00-0189-4157-8ea0-b1e59c92ae9f"
+					(reference "R5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 162.56 68.58 0)
 		(unit 1)
@@ -3399,7 +3489,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_1206_3216Metric"
+		(property "Footprint" "Resistor_SMD:R_2512_6332Metric"
 			(at 97.79 90.17 0)
 			(hide yes)
 			(show_name no)

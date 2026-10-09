@@ -918,7 +918,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TestPoint"
+		(property "Value" "+3V3 (sense only)"
 			(at 189.23 53.8479 0)
 			(show_name no)
 			(do_not_autoplace no)

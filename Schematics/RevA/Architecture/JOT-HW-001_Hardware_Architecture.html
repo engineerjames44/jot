@@ -10,7 +10,7 @@
   @page {
     size: Letter;
     margin: 0.75in 0.85in 0.8in;
-    @bottom-left { content: "Jot Rev A  |  Hardware Architecture  |  JOT-HW-001  |  Draft 4"; font: 8pt Helvetica, Arial, sans-serif; color: #777; }
+    @bottom-left { content: "Jot Rev A  |  Hardware Architecture  |  JOT-HW-001  |  Draft 5"; font: 8pt Helvetica, Arial, sans-serif; color: #777; }
     @bottom-right { content: "Page " counter(page); font: 8pt Helvetica, Arial, sans-serif; color: #777; }
   }
   :root { --ink: #1b1b1f; --muted: #5f6066; --rule: #d4d4da; --head: #ececf1; }
@@ -42,10 +42,10 @@
 
 <table class="meta">
   <tr><td>Document</td><td>JOT-HW-001</td></tr>
-  <tr><td>Revision</td><td>Rev A architecture, draft 4</td></tr>
+  <tr><td>Revision</td><td>Rev A architecture, draft 5</td></tr>
   <tr><td>Author</td><td>James Cronin</td></tr>
-  <tr><td>Date</td><td>2 October 2026</td></tr>
-  <tr><td>Status</td><td>Architecture agreed; parts selected and verified against datasheets; schematic capture next</td></tr>
+  <tr><td>Date</td><td>8 October 2026</td></tr>
+  <tr><td>Status</td><td>Schematic complete and reviewed (Claude + Codex panel, coworker review, senior-engineer fault pass); footprints assigned; PCB layout next</td></tr>
   <tr><td>Companion files</td><td><code>BOM/Jot_RevA_BOM.xlsx</code> (parts, verification, design changes), <code>BOM/Jot_RevA_Pin_List.xlsx</code> (module pins, netlist), <code>Datasheets/</code></td></tr>
 </table>
 
@@ -56,7 +56,7 @@
 <table>
   <tr><th style="width:5%">ID</th><th style="width:37%">Requirement</th><th>How Rev A meets it</th></tr>
   <tr><td>R1</td><td>Hold to record; recording starts immediately, even from sleep</td><td>Button wakes the nRF52840 from System OFF; audio goes straight to local flash, no wait for BLE</td></tr>
-  <tr><td>R2</td><td>No lost recordings when the phone is out of range</td><td>128 MB flash buffer (roughly 18 h of Opus audio); clips sync when the phone reconnects</td></tr>
+  <tr><td>R2</td><td>No lost recordings when the phone is out of range</td><td>32 MB flash buffer (roughly 4.5 h of Opus audio, or about 68 min of the ADPCM used on Prototype One); clips sync when the phone reconnects</td></tr>
   <tr><td>R3</td><td>Recording is always visible</td><td>Rec LED is powered from the same switched rail as the microphones</td></tr>
   <tr><td>R4</td><td>Feedback without looking at the device</td><td>LRA haptic motor via DRV2605L; RGB status LED; 4 kHz buzzer</td></tr>
   <tr><td>R5</td><td>Days of standby; accurate battery %</td><td>TPS7A02 LDO (25 nA quiescent current), System OFF sleep, MAX17048 fuel gauge</td></tr>
@@ -119,7 +119,7 @@
   <g font-size="8.5" fill="#444">
     <text x="80" y="51">USBLC6 ESD, 5.1k CC</text>
     <text x="261" y="51">MCP73831, ~200 mA</text>
-    <text x="441" y="51">400 mAh, protected</text>
+    <text x="441" y="51">400 mAh; fuse + rev. FET</text>
     <text x="621" y="51">MAX17048</text>
     <text x="261" y="161">TPS7A0233, 25 nA Iq</text>
     <text x="441" y="161">charger CHG pin</text>
@@ -143,7 +143,7 @@
   </g>
   <g font-size="8.3" fill="#444">
     <text x="76" y="388">Mic 1: TDK T3902</text><text x="76" y="400">Mic 2: footprint (DNP)</text><text x="76" y="412">PDM, L/R select</text><text x="76" y="424">AO3401A mic switch</text>
-    <text x="228" y="388">W25Q01JV</text><text x="228" y="400">128 MB NOR flash</text><text x="228" y="412">QSPI</text><text x="228" y="424">clip buffer</text>
+    <text x="228" y="388">W25Q256JV</text><text x="228" y="400">32 MB NOR flash</text><text x="228" y="412">QSPI</text><text x="228" y="424">clip buffer</text>
     <text x="380" y="388">LIS2DW12 accel</text><text x="380" y="400">+ wake interrupt</text><text x="380" y="412">DRV2605L</text><text x="380" y="424">+ VG0832012 LRA</text>
     <text x="532" y="388">Side button (wake)</text><text x="532" y="400">Rec LED (on mic rail)</text><text x="532" y="412">RGB status LED</text><text x="532" y="424">4 kHz buzzer</text>
     <text x="684" y="388">PCB coil antenna</text><text x="684" y="400">2 tuning caps</text><text x="684" y="412">tuned per nWP-026</text><text x="684" y="424">tap to pair</text>
@@ -155,17 +155,19 @@
 <h2>4. Block descriptions</h2>
 
 <h3>4.1 USB-C input</h3>
-<p>HRO TYPE-C-31-M-12 receptacle. Supplies 5 V for charging and carries USB data to the nRF52840. Two 5.1 kΩ resistors on the CC pins tell a USB-C charger to supply power; without them many chargers supply nothing. A USBLC6-2SC6 ESD protection part sits on the data lines because the connector is the part people touch. The module's VBUS pin is fed through a 2.2 Ω series resistor (R14), as the nRF52840 Product Specification recommends for new designs, with 10 µF to ground.</p>
+<p>HRO TYPE-C-31-M-12 receptacle. Supplies 5 V for charging and carries USB data to the nRF52840. Two 5.1 kΩ resistors on the CC pins tell a USB-C charger to supply power; without them many chargers supply nothing. A USBLC6-2SC6 ESD protection part sits on the data lines because the connector is the part people touch. An SMF5.0A TVS diode (D5, 5 V standoff, 6.4 to 7 V breakdown) sits across VBUS next to the connector: the MCP73831 datasheet (section 6.1.1.2) requires input overvoltage protection when the supply is hot-plugged, because the cable inductance makes the voltage ring on connection. It absorbs ordinary plug-in transients; it cannot hold the module's VBUS pin (5.8 V absolute maximum) or the charger (7 V) under a large surge (see section 4.14). The module's VBUS pin is fed through a 2.2 Ω series resistor (R14), as the nRF52840 Product Specification recommends for new designs, with 10 µF to ground.</p>
 
 <h3>4.2 Charger</h3>
-<p>Microchip MCP73831T-2ACI/OT single-cell LiPo charger in SOT-23-5. It stops at 4.2 V. A 5.1 kΩ PROG resistor sets the charge current to about 196 mA (I<sub>REG</sub> = 1000 V / R<sub>PROG</sub>), which is 0.5C for the 400 mAh cell. VDD and VBAT each have 4.7 µF, the datasheet minimum for stability when no battery is connected. The tri-state STAT pin pulls the green charge LED low while charging, so charging is visible even if the firmware is not running. There is no battery-temperature input; the pack has no thermistor. The system load runs from the battery rail, as on the XIAO nRF52840.</p>
+<p>Microchip MCP73831T-2ACI/OT single-cell LiPo charger in SOT-23-5. It stops at 4.2 V. A 5.1 kΩ PROG resistor sets the charge current to about 196 mA (I<sub>REG</sub> = 1000 V / R<sub>PROG</sub>), which is 0.5C for the 400 mAh cell. VDD and VBAT each have 4.7 µF, the datasheet minimum for stability when no battery is connected. The tri-state STAT pin pulls the green charge LED low while charging, so charging is visible even if the firmware is not running. The system load runs from the battery rail, as on the XIAO nRF52840.</p>
+<p>The charger has no battery-temperature input, and the cell may only be charged between 0 and 45 °C. Rev A adds a firmware charge inhibit: the PROG resistor reaches ground through an N-MOSFET (Q7) whose gate is pulled up to VBUS by 100 kΩ (R20), so whenever USB is present the charger is enabled by default, even with the nRF52840 unpowered or in reset; a flat battery can always recover. A second N-MOSFET (Q8, gate on CHG_INHIBIT, P1.11, with a 100 kΩ pull-down R21) pulls Q7's gate low, which floats PROG and disables charging (datasheet sections 3.5 and 4.3). Firmware sets CHG_INHIBIT high outside about 5 to 40 °C, using the nRF52840 or accelerometer temperature. No 5 V reaches a GPIO. This measures board temperature, not cell temperature, and cannot act while the MCU is off (section 4.14).</p>
 <p>Draft 3 used a TI BQ25101. Its DSBGA package has 0.4 mm ball pitch, below the 0.5 mm minimum of JLCPCB's Economic assembly (Standard assembly needs a 70 × 70 mm panel), and it cannot be reworked by hand on a first board, so it was replaced before footprints were assigned.</p>
 
 <h3>4.3 LiPo battery</h3>
-<p>Adafruit 3898: one 3.7 V, 400 mAh lithium-polymer cell (about 36 × 17 × 7.8 mm) with its own protection circuit and a JST-PH lead. This is above the 150 to 350 mAh range first expected, so its fit must be confirmed when the case is designed. Check the lead polarity against the J2 footprint before first power-up: JST-PH polarity is not consistent between battery vendors.</p>
+<p>Adafruit 3898: one 3.7 V, 400 mAh lithium-polymer cell (about 36 × 17 × 7.8 mm) with its own protection circuit and a JST-PH lead. This is above the 150 to 350 mAh range first expected, so its fit must be confirmed when the case is designed. Check the lead polarity against the J2 footprint before first power-up: JST-PH polarity is not consistent between battery vendors (the Rev A pack: red on the right with the key up, looking into the plug, which is J2 pin 1 = +).</p>
+<p>Between J2 and the battery rail: a resettable polyfuse F1 (SMD0805P050TF: 0.5 A hold, 1 A trip; 0.33 A hold at 60 °C) and a reverse-polarity P-MOSFET Q6 (AO3401A, drain to the fuse, source to +BATT, gate to ground). The pack's own protection only trips at 2 to 5 A, so F1 covers faults between about 1 and 2 A. Worst-case sustained load is about 245 mA (radio, flash, buzzer, haptics and LEDs together) and charging is about 200 mA, both below the derated hold current. Q6 switches fully on with a correct battery (under 120 mΩ, under 30 mV at 245 mA) and stays off with a reversed one when USB is absent.</p>
 
 <h3>4.4 Fuel gauge (MAX17048)</h3>
-<p>Estimates battery percentage from the cell voltage using a battery model, with no current-sense resistor. It is powered from the battery, reports over I2C (address 0x36), and draws only a few microamps, so it can stay on all the time. Its ALRT output can wake the nRF52840 on low battery.</p>
+<p>Estimates battery percentage from the cell voltage using a battery model, with no current-sense resistor. It is powered from the battery, reports over I2C (address 0x36), and draws only a few microamps, so it can stay on all the time. Its open-drain ALRT output (no external pull-up: enable the nRF52840 internal pull-up) can wake the nRF52840 on low battery.</p>
 
 <h3>4.5 3.3 V LDO</h3>
 <p>TI TPS7A0233 (200 mA, 25 nA quiescent current, 270 mV maximum dropout at 200 mA) converts the battery voltage (about 3.0 to 4.2 V) to 3.3 V for the module, flash, accelerometer, and mic switch, with 1 µF on its input and output. Below about 3.5 V on the battery the rail follows the battery down; every 3.3 V part works down to at least 2.7 V. The nRF52840's internal high-voltage regulator (REG0) is not used: it starts at 1.8 V until firmware programs <code>UICR.REGOUT0</code>, which the 2.7 V minimum flash cannot run from, and it allows only about 25 mA for external loads, which a flash write (up to 25 mA) plus LEDs can exceed.</p>
@@ -177,13 +179,13 @@
 <p>Mic 1 is a TDK T3902 bottom-port PDM MEMS microphone (64 dBA SNR, 1.65 to 3.63 V). It replaced the planned Infineon IM69D130 (69 dB SNR) because the T3902 is stocked at LCSC. Bottom port means the sound enters through a hole in the PCB under the mic; this fixes which board face points at the case opening. Mic 1's SELECT pin is grounded (right channel). A footprint for Mic 2 shares the same two PDM wires with SELECT tied high (left channel) and is not populated on Rev A (DNP). Both mics and the Rec LED are powered from a switched rail: an AO3401A P-MOSFET with a 100 kΩ gate pull-up, so the rail is off by default and on when the GPIO drives low. Firmware should release the PDM clock pin while the rail is off.</p>
 
 <h3>4.8 Storage</h3>
-<p>Winbond W25Q01JVZEIQ: 1 Gbit (128 MB) NOR flash on QSPI, WSON-8 8 × 6 mm, quad mode enabled at the factory. It is two stacked 512 Mbit dies with linear 4-byte addressing; each die reports its own BUSY bit. A 100 kΩ pull-up holds chip-select high while the nRF52840 powers up or resets, as Winbond requires. Recordings are written here first and deleted once the phone confirms it has them.</p>
+<p>Winbond W25Q256JVEIQ: 256 Mbit (32 MB) NOR flash on QSPI, WSON-8 8 × 6 mm, quad mode fixed on at the factory (QE = 1 for the IQ option). It replaced the 128 MB W25Q01JV in draft 5: same package and pinout, $4.34 instead of $36.51 per board, and 32 MB is about 68 minutes of 8 KB/s audio, ample between syncs. It powers up in 3-byte addressing; firmware switches to 4-byte mode (instruction B7h) to reach above 16 MB. Its read voltage must stay within ±10% of the voltage the data was written at, so firmware blocks writes below the low-battery cutoff. A 100 kΩ pull-up holds chip-select high while the nRF52840 powers up or resets, as Winbond requires. Recordings are written here first and deleted once the phone confirms it has them.</p>
 
 <h3>4.9 Sensors on I2C</h3>
-<p>LIS2DW12 low-power accelerometer (address 0x19, SA0 tied high: its internal pull-up cannot be switched off, so tying it low would draw about 150 µA): detects raise-to-wake, double-tap, and shake in hardware and signals the nRF52840 on an interrupt pin, so the main chip can stay asleep. DRV2605L haptic driver (address 0x5A), powered from the battery with 1 µF on VDD and on REG, drives a Vybronics VG0832012 LRA (8 mm coin, 235 Hz, 1.8 Vrms) for crisp taps from a built-in effect library. Both share the I2C bus with the fuel gauge; one pair of 4.7 kΩ pull-ups serves the whole bus.</p>
+<p>LIS2DW12 low-power accelerometer (address 0x19, SA0 tied high: its internal pull-up cannot be switched off, so tying it low would draw about 150 µA): detects raise-to-wake, double-tap, and shake in hardware and signals the nRF52840 on an interrupt pin, so the main chip can stay asleep. DRV2605L haptic driver (address 0x5A), powered from the battery with 1 µF on VDD and on REG, drives a Vybronics VG0832012 LRA (8 mm coin, 235 Hz, 1.8 Vrms) for crisp taps from a built-in effect library. Both share the I2C bus with the fuel gauge; one pair of 2.2 kΩ pull-ups serves the whole bus. They were 4.7 kΩ until draft 5: the MAX17048 alone may add 60 pF and requires a 300 ns maximum rise time, which left only about 15 pF of margin (t<sub>r</sub> ≈ 0.85·R·C); 2.2 kΩ allows about 160 pF. The extra current (1.5 mA per line) flows only during transfers.</p>
 
 <h3>4.10 UI</h3>
-<p>Side button: TS-1010-C-A right-angle tactile switch to ground, using the internal pull-up; it is also the wake source. Rec LED: red 0603 on the mic rail through 1 kΩ. RGB status LED: common-anode 1615 RGB with the anode on the battery rail. Each cathode is switched to ground by an AO3400A (gate from a PWM pin, 100 kΩ pull-down) through 1 kΩ (red) and 560 Ω (green, blue), about 2 mA at 3.7 V. Green and blue need about 2.6 V at 2 mA (up to about 3.0 V worst case), and the 3.3 V rail falls to about 3.0 V as the battery empties, so driving them from a 3.3 V pin left no headroom whatever the resistor; from the battery they stay lit down to 3.0 V, and no GPIO sees the battery voltage. Draft 2 drove a common-cathode TJ-S1615 from GPIOs through 100 Ω, which does not fix the headroom. Buzzer: MLT-5020 magnetic buzzer, 4 kHz, from the battery rail through a 10 Ω series resistor (the buzzer is rated 2 to 4 V and the battery reaches 4.2 V) and an AO3400A low-side MOSFET, with a 1N4148W flyback diode across the buzzer, for confirmation tones and a find-my-Jot feature.</p>
+<p>Side button: TS-1010-C-A right-angle tactile switch to ground through a 1 kΩ series resistor (R5, placed at the module) that limits ESD current into the pin, using the internal pull-up; it is also the wake source. Rec LED: red 0603 on the mic rail through 1 kΩ. RGB status LED: common-anode 1615 RGB with the anode on the battery rail. Each cathode is switched to ground by an AO3400A (gate from a PWM pin, 100 kΩ pull-down) through 1 kΩ (red) and 560 Ω (green, blue), about 2 mA at 3.7 V. Green and blue need about 2.6 V at 2 mA (up to about 3.0 V worst case), and the 3.3 V rail falls to about 3.0 V as the battery empties, so driving them from a 3.3 V pin left no headroom whatever the resistor. From the battery they keep more headroom: at the 3.3 V firmware cutoff green and blue still get about 0.5 mA (dim but lit); a 3.0 V cell leaves no guaranteed margin, so use red for the low-battery warning. No GPIO sees the battery voltage. Draft 2 drove a common-cathode TJ-S1615 from GPIOs through 100 Ω, which does not fix the headroom. Buzzer: MLT-5020 magnetic buzzer, 4 kHz, from the battery rail through a 10 Ω, 1 W series resistor in a 2512 package (R19; the buzzer is rated 2 to 4 V and the battery reaches 4.2 V; if Q1 were left on, R19 would dissipate about 0.49 W) and an AO3400A low-side MOSFET, with a 1N4148W flyback diode across the buzzer, for confirmation tones and a find-my-Jot feature.</p>
 
 <h3>4.11 NFC</h3>
 <p>The nRF52840 has an NFC tag built in. Rev A adds a coil antenna drawn in copper on the PCB and two equal tuning capacitors (C0G, 0402) from NFC1 and NFC2 to ground, forming an LC tank tuned to 13.56 MHz. Tapping Jot to the iPhone can open the app or start pairing. The tuning follows Nordic white paper nWP-026 (in <code>Datasheets/NFC/</code>):</p>
@@ -192,7 +194,7 @@
   <tr><th>Coil inductance L<sub>ant</sub></th><td>1.0 µH</td><td>1.5 µH</td><td>2.0 µH</td><td>2.5 µH</td></tr>
   <tr><th>Starting C<sub>tune</sub> (C<sub>p</sub> = 0)</th><td>~270 pF</td><td>~180 pF</td><td>~134 pF</td><td>~106 pF</td></tr>
 </table>
-<p>Steps: (1) draw the coil once the board outline is known and calculate its inductance from its dimensions; (2) fit the estimated capacitor; (3) tune on the built board with a network analyzer (S11 dip at 13.56 MHz; lower C if the dip is above, raise it if below). Avoid the NFC Forum reference poller sizes (46 × 32 mm and 25 × 20 mm) to prevent overcoupling.</p>
+<p>Steps: (1) draw the coil once the board outline is known and calculate its inductance from its dimensions; (2) fit the estimated capacitor; (3) tune on the built board with a network analyzer (S11 dip at 13.56 MHz; raise C if the dip is above 13.56 MHz, lower it if below, since f = 1 / (2π√(LC))). Avoid the NFC Forum reference poller sizes (46 × 32 mm and 25 × 20 mm) to prevent overcoupling.</p>
 
 <h3>4.12 Power budget (estimate)</h3>
 <p>First-pass estimates from the component datasheets (typical values at 25 °C), to be replaced by measurements at bring-up.</p>
@@ -205,15 +207,27 @@
 <p>With 320 mAh usable (80% of 400 mAh), the electronics alone allow over two years of standby, so the cell's own self-discharge sets the real limit and R5 is met with a wide margin. A typical day (ten one-minute recordings and one sync) uses about 1.6 mAh, roughly 200 days per charge (about 150 days with the DC/DC regulator off). Firmware must put the flash into deep power-down before System OFF (in standby it can draw up to 170 µA), enable the DC/DC regulator, and keep the haptic driver's EN pin low.</p>
 
 <h3>4.13 Bring-up and test plan</h3>
-<p>Check the battery lead polarity, then feed the battery input from a bench supply at 3.7 V with a 50 mA current limit. Confirm the 3.3 V rail, that idle current is in the microamp range, and that nothing runs warm. Then, in order: probe the LDO output and the module's VDD; flash a blinky over SWD and check reset; scope the 32.768 kHz crystal once firmware starts it; read the flash JEDEC ID over QSPI, then write and read back across both dies; find the three I2C parts (0x19, 0x36, 0x5A); switch on the mic rail, confirm the Rec LED, and capture and play back PDM audio; pair over BLE and transfer a clip; test USB charging and the UF2 bootloader. Finally, measure every mode on the battery input with a power profiler (Nordic PPK2) and update section 4.12 with real numbers.</p>
+<p>Check the battery lead polarity, then feed the battery input from a bench supply at 3.7 V with a 50 mA current limit. Confirm the 3.3 V rail, that idle current is in the microamp range, and that nothing runs warm. Then, in order: probe the LDO output and the module's VDD; flash a blinky over SWD and check reset; scope the 32.768 kHz crystal once firmware starts it; read the flash JEDEC ID over QSPI, then write and read back across both dies; find the three I2C parts (0x19, 0x36, 0x5A); switch on the mic rail, confirm the Rec LED, and capture and play back PDM audio; pair over BLE and transfer a clip; test USB charging and the UF2 bootloader; check that CHG_INHIBIT stops and restarts charging; scope VBUS at the charger and at the module when plugging in a cable (hot-plug overshoot against 7 V and 5.8 V); with USB unplugged, confirm a reversed battery draws no current. Finally, measure every mode on the battery input with a power profiler (Nordic PPK2) and update section 4.12 with real numbers.</p>
+
+<h3>4.14 Protection summary and known Rev A limitations</h3>
+<p>Draft 5 came from a coworker's review and a senior-engineer fault pass: for every rail, what limits the current if something shorts, and what each part sees in a single fault. The 3.3 V rail is limited by the LDO's foldback current limit; the battery rail by F1 and the pack's protection; the USB input by the source. Rev A is a development build; these limits are accepted and documented, each with a test at bring-up and a Rev B fix:</p>
+<table>
+  <tr><th style="width:26%">Limitation</th><th style="width:37%">Why it is accepted on Rev A</th><th>Rev B fix</th></tr>
+  <tr><td>Reversed battery while USB is connected: the charger drives +BATT, which turns Q6 on, and a few tens of mA can flow into the reversed cell</td><td>Keyed JST-PH plug, batteries fitted and polarity-checked by the builder; the common case (reversed pack, no USB) is blocked</td><td>Reverse-polarity switch that stays off with either USB state (Analog Devices AN-171 approach) or an ideal-diode controller</td></tr>
+  <tr><td>Charge temperature: firmware inhibit uses board temperature and cannot act while the MCU is off</td><td>Development units charged indoors at room temperature; the inhibit covers the normal case</td><td>Charger with an NTC input and a thermistor on the cell</td></tr>
+  <tr><td>VBUS surge: D5 clamps ordinary hot-plug transients but not every surge below the module's 5.8 V and the charger's 7 V absolute maximum</td><td>Matches common practice for small USB devices; overshoot is measured at bring-up</td><td>Overvoltage-protection load switch on VBUS</td></tr>
+  <tr><td>A short at the buzzer (for example a solder bridge) puts about 1.8 W into R19, below F1's hold current</td><td>A manufacturing fault: inspected at assembly; R19 kept away from the cell</td><td>Current-limited buzzer drive</td></tr>
+  <tr><td>VBUS capacitance 14.7 µF (C1 + C7) is above the USB 10 µF guideline</td><td>Chargers and phones tolerate it</td><td>Reduce C7 or add soft-start</td></tr>
+</table>
+<p>Firmware rules the hardware relies on: drive the buzzer only from the PWM peripheral; low-battery cutoff at about 3.3 to 3.4 V (the pack only cuts off at 2.5 V) and no flash writes below it; FG_ALRT internal pull-up; CHG_INHIBIT high outside about 5 to 40 °C while USB is present; release the PDM pins before switching the mic rail off; flash 4-byte addressing; I2C at 100 kHz.</p>
 
 <h2>5. Interfaces</h2>
 <p>Each connection in Figure 1 uses a standard interface. Knowing these makes the schematic much easier to read. The exact pin for each signal is in the pin list.</p>
 <table>
   <tr><th style="width:11%">Interface</th><th style="width:20%">Wires</th><th style="width:20%">Used for</th><th>What to know</th></tr>
-  <tr><td>I2C</td><td>2 (SDA, SCL) + pull-up resistors</td><td>Fuel gauge, accelerometer, haptic driver</td><td>Shared bus; each chip has its own address (0x36, 0x19, 0x5A, no conflicts). Needs one pair of pull-ups on the whole bus, not one per chip.</td></tr>
+  <tr><td>I2C</td><td>2 (SDA, SCL) + pull-up resistors</td><td>Fuel gauge, accelerometer, haptic driver</td><td>Shared bus; each chip has its own address (0x36, 0x19, 0x5A, no conflicts). Needs one pair of pull-ups on the whole bus (2.2 kΩ), not one per chip.</td></tr>
   <tr><td>PDM</td><td>2 (clock, data)</td><td>Microphones</td><td>Digital audio from the mic. Two mics can share the wires, one on each clock edge (left/right).</td></tr>
-  <tr><td>QSPI</td><td>6 (clock, chip select, 4 data)</td><td>128 MB flash</td><td>SPI with four data lines for speed. The nRF52840 selects QSPI pins in firmware; Rev A uses the nRF52840 DK's set (CSN P0.17, SCK P0.19, IO0 to IO3 on P0.20 to P0.23) with high-drive outputs. The PS lists P0.18/P1.00 as an alternative, but P0.18 is the reset pin.</td></tr>
+  <tr><td>QSPI</td><td>6 (clock, chip select, 4 data)</td><td>32 MB flash</td><td>SPI with four data lines for speed. The nRF52840 selects QSPI pins in firmware; Rev A uses the nRF52840 DK's set (CSN P0.17, SCK P0.19, IO0 to IO3 on P0.20 to P0.23) with high-drive outputs. The PS lists P0.18/P1.00 as an alternative, but P0.18 is the reset pin.</td></tr>
   <tr><td>USB</td><td>2 (D+, D-)</td><td>Firmware updates, debug</td><td>Full-speed USB is built into the nRF52840; no extra USB chip needed.</td></tr>
   <tr><td>SWD</td><td>2 (SWDIO, SWCLK) + GND, 3.3 V, reset</td><td>Programming and debugging</td><td>Used with a debug probe for the first flash and for step-through debugging.</td></tr>
   <tr><td>NFC</td><td>2 (NFC1, NFC2)</td><td>Coil antenna</td><td>Dedicated pins on the nRF52840; the coil and caps form a tuned circuit at 13.56 MHz.</td></tr>
@@ -227,7 +241,8 @@
   <tr><td>Radio implementation</td><td>Pre-certified module, not a bare chip</td><td>Avoids RF layout risk on a first board</td></tr>
   <tr><td>3.3 V supply</td><td>External TPS7A02 LDO; nRF in normal voltage mode</td><td>Correct voltage from first power-up and no 25 mA external-load limit, at 25 nA standby cost</td></tr>
   <tr><td>Microphone</td><td>TDK T3902</td><td>In stock at LCSC; 64 dBA SNR. The IM69D130 (69 dB) was the first choice</td></tr>
-  <tr><td>Storage size</td><td>128 MB flash, not microSD</td><td>Clips only live on the device until synced; flash is smaller, lower power, no moving parts</td></tr>
+  <tr><td>Storage size</td><td>32 MB flash, not microSD</td><td>Clips only live on the device until synced; flash is smaller, lower power, no moving parts. 32 MB (about 68 min of audio) instead of 128 MB saves about $32 a board</td></tr>
+  <tr><td>Battery protection</td><td>Polyfuse + reverse-polarity P-FET; firmware charge inhibit</td><td>Covers faults below the pack's 2 A trip, a reversed pack, and charging outside 0 to 45 °C, for units given to other people</td></tr>
   <tr><td>Recording indicator</td><td>LED on the mic power rail</td><td>Recording cannot happen without the light being on</td></tr>
   <tr><td>Haptics</td><td>DRV2605L + LRA</td><td>Crisp, phone-like feedback; effect library saves firmware work</td></tr>
   <tr><td>Flash pins</td><td>nRF52840 DK QSPI pin set</td><td>Keeps P0.18 as a working pin reset; matches the DK's Zephyr board files</td></tr>
@@ -239,15 +254,17 @@
 <table>
   <tr><th style="width:4%">#</th><th style="width:44%">Item</th><th style="width:11%">Status</th><th>Outcome</th></tr>
   <tr><td>1</td><td>Confirm the mic port type and LCSC stock</td><td class="done">Done</td><td>TDK T3902 (bottom port, LCSC C3171752)</td></tr>
-  <tr><td>2</td><td>Pick the module and confirm it exposes the QSPI, USB, and NFC pins</td><td class="done">Done</td><td>Raytac MDBT50Q-1MV2; all pins confirmed against its datasheet. Not stocked at LCSC: buy from DigiKey/Mouser</td></tr>
-  <tr><td>3</td><td>Pick the 128 MB flash part and confirm the Zephyr driver supports its 4-byte addressing</td><td class="open">Part done</td><td>W25Q01JVZEIQ chosen. Confirm Zephyr 4-byte addressing and per-die BUSY polling during firmware bring-up</td></tr>
+  <tr><td>2</td><td>Pick the module and confirm it exposes the QSPI, USB, and NFC pins</td><td class="done">Done</td><td>Raytac MDBT50Q-1MV2; all pins confirmed against its datasheet. Pre-ordered through JLCPCB (C5118826) on 8 October, with the DRV2605L (low stock)</td></tr>
+  <tr><td>3</td><td>Pick the flash part and confirm the Zephyr driver supports its 4-byte addressing</td><td class="open">Part done</td><td>W25Q256JVEIQ (32 MB) chosen in draft 5. Confirm Zephyr 4-byte addressing during firmware bring-up</td></tr>
   <tr><td>4</td><td>Select charger and LDO from in-stock LCSC parts</td><td class="done">Done</td><td>MCP73831T-2ACI/OT (C424093), TPS7A0233 (C2887324). The BQ25101 was dropped in draft 4: its 0.4 mm BGA is below JLCPCB Economic assembly limits.</td></tr>
   <tr><td>5</td><td>Choose the LRA size to fit the case</td><td class="open">Part done</td><td>Vybronics VG0832012 (8 mm); confirm fit in the case</td></tr>
-  <tr><td>6</td><td>Battery capacity and dimensions (set by the case)</td><td class="open">Part done</td><td>Adafruit 3898, 400 mAh, 36 × 17 × 7.8 mm; confirm fit and lead polarity</td></tr>
+  <tr><td>6</td><td>Battery capacity and dimensions (set by the case)</td><td class="open">Part done</td><td>Adafruit 3898, 400 mAh, 36 × 17 × 7.8 mm; polarity checked on the prototype pack (red = pin 1); confirm fit</td></tr>
   <tr><td>7</td><td>Assign every signal to a module pin (pin map)</td><td class="done">Done</td><td>See <code>BOM/Jot_RevA_Pin_List.xlsx</code></td></tr>
   <tr><td>8</td><td>NFC coil size and tuning capacitor values</td><td class="open">Open</td><td>Method and starting values in section 4.11; coil depends on the board outline</td></tr>
   <tr><td>9</td><td>Pick an in-stock common-anode 1615 RGB LED for the battery-rail drive (section 4.10)</td><td class="done">Done</td><td>TOGIALED TJ-S1615SW6TGLCCYRGB-A5 (LCSC C273610), same family and pads as the common-cathode part it replaces: pin 1 anode, 2 blue, 3 green, 4 red. Q3-Q5 AO3400A with R15-R17 100k pull-downs; R8 1k, R9/R10 560 Ω. BOM and pin list updated 4 October.</td></tr>
   <tr><td>10</td><td>Give the mic its own T3902 symbol</td><td class="done">Done</td><td>Jot:T3902 symbol with the TDK datasheet and MPN; it keeps KiCad's Knowles LGA-5 footprint, whose pins, pads and port were checked against the T3902 datasheet and match. Netlist unchanged</td></tr>
+  <tr><td>11</td><td>Send the layout to Raytac for a free antenna keep-out review</td><td class="open">Open</td><td>Module at the board edge; no copper on any layer in the keep-out (Raytac datasheet section 2.3)</td></tr>
+  <tr><td>12</td><td>Rev B protection items (section 4.14)</td><td class="open">Open</td><td>Reverse switch with USB, NTC charger, VBUS overvoltage switch, current-limited buzzer</td></tr>
 </table>
 
 <h2>8. Revision history</h2>
@@ -257,6 +274,7 @@
   <tr><td>2</td><td>2 October 2026</td><td>Parts selected and checked against datasheets; mic changed to TDK T3902; external LDO confirmed (REG0 unused); R14 and 10 µF decoupling added; QSPI pin note corrected; NFC tuning method added.</td></tr>
   <tr><td>3</td><td>3 October 2026</td><td>Crystal load-cap calculation written out with board stray; RGB LED moved to the battery rail with low-side FETs; mic footprint checked against the T3902 datasheet; power budget and bring-up plan added. 4 October: accelerometer address changed to 0x19 (SA0 high) to avoid current through its internal pull-up.</td></tr>
   <tr><td>4</td><td>5 October 2026</td><td>Charger changed from TI BQ25101 (0.4 mm-pitch DSBGA, not assemblable by JLCPCB Economic PCBA) to Microchip MCP73831 in SOT-23-5 with a 5.1 kΩ PROG resistor and 4.7 µF on VDD and VBAT. Schematic review (4 October) added a 100 kΩ pull-up on the flash chip-select and a 10 Ω resistor in series with the buzzer.</td></tr>
+  <tr><td>5</td><td>8 October 2026</td><td>After a coworker review and a Claude + Codex senior-engineer review: polyfuse F1 and reverse-polarity P-FET Q6 at the battery connector; SMF5.0A TVS on VBUS; firmware charge inhibit (Q7, Q8, R20, R21, CHG_INHIBIT on P1.11); buzzer resistor R19 to 1 W 2512; I2C pull-ups 4.7 kΩ to 2.2 kΩ; 1 kΩ series resistor on the button; flash changed to the 32 MB W25Q256JV; NFC tuning direction corrected; LED low-battery claim corrected; protection summary and known limitations added (section 4.14).</td></tr>
 </table>
 
 </body>

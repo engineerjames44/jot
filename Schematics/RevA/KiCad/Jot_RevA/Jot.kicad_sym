@@ -989,7 +989,7 @@
 		)
 		(embedded_fonts no)
 	)
-	(symbol "W25Q01JVZEIQ"
+	(symbol "W25Q256JVEIQ"
 		(exclude_from_sim no)
 		(in_bom yes)
 		(on_board yes)
@@ -1006,7 +1006,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "W25Q01JVZEIQ"
+		(property "Value" "W25Q256JVEIQ"
 			(at -5.08 -8.89 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1029,7 +1029,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "${KIPRJMOD}/../../Datasheets/Storage/W25Q01JV_Winbond.pdf"
+		(property "Datasheet" "${KIPRJMOD}/../../Datasheets/Storage/W25Q256JV_Winbond.pdf"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1040,7 +1040,7 @@
 				)
 			)
 		)
-		(property "Description" "1 Gbit (128 MB) 3 V serial NOR flash, SPI / Dual / Quad SPI, WSON-8 8x6 mm (ZE)"
+		(property "Description" "256 Mbit (32 MB) 3 V serial NOR flash, SPI / Dual / Quad SPI, WSON-8 8x6 mm (E)"
 			(at 0 0 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1062,7 +1062,7 @@
 				)
 			)
 		)
-		(symbol "W25Q01JVZEIQ_0_1"
+		(symbol "W25Q256JVEIQ_0_1"
 			(rectangle
 				(start -5.08 10.16)
 				(end 10.16 -7.62)
@@ -1075,7 +1075,7 @@
 				)
 			)
 		)
-		(symbol "W25Q01JVZEIQ_1_1"
+		(symbol "W25Q256JVEIQ_1_1"
 			(pin input line
 				(at -7.62 7.62 0)
 				(length 2.54)

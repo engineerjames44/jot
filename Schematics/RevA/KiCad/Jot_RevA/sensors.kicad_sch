@@ -1628,7 +1628,7 @@
 	)
 	(wire
 		(pts
-			(xy 143.51 118.11) (xy 143.51 121.92)
+			(xy 132.08 120.65) (xy 132.08 118.11)
 		)
 		(stroke
 			(width 0)
@@ -1655,6 +1655,16 @@
 			(type default)
 		)
 		(uuid "34aebe30-a77e-434a-811b-b6ac78bd66ed")
+	)
+	(wire
+		(pts
+			(xy 143.51 120.65) (xy 143.51 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4556ca7e-be17-4403-9327-76ca21e29deb")
 	)
 	(wire
 		(pts
@@ -1865,6 +1875,16 @@
 			(type default)
 		)
 		(uuid "ae989760-b330-4328-8545-ea3a07558875")
+	)
+	(wire
+		(pts
+			(xy 132.08 120.65) (xy 143.51 120.65)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b0573c19-1cab-4353-8857-6a72a35ccc18")
 	)
 	(wire
 		(pts
@@ -2273,7 +2293,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4.7k"
+		(property "Value" "2.2k"
 			(at 146.05 115.5699 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2578,7 +2598,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "TestPoint"
+		(property "Value" "MOTOR- (LRA)"
 			(at 81.28 103.6319 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2813,7 +2833,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "4.7k"
+		(property "Value" "2.2k"
 			(at 151.13 90.1699 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3051,7 +3071,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TestPoint"
+		(property "Value" "MOTOR+ (LRA)"
 			(at 81.28 94.4879 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3109,7 +3129,7 @@
 	)
 	(symbol
 		(lib_id "power:+3V3")
-		(at 143.51 121.92 180)
+		(at 132.08 118.11 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3120,7 +3140,7 @@
 		(fields_autoplaced yes)
 		(uuid "8c572616-0fca-4d20-b4ef-1a79c2b1daee")
 		(property "Reference" "#PWR044"
-			(at 143.51 118.11 0)
+			(at 132.08 121.92 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3131,17 +3151,18 @@
 			)
 		)
 		(property "Value" "+3V3"
-			(at 143.51 127 0)
+			(at 134.62 116.8399 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
 		(property "Footprint" ""
-			(at 143.51 121.92 0)
+			(at 132.08 118.11 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3152,7 +3173,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 143.51 121.92 0)
+			(at 132.08 118.11 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3163,7 +3184,7 @@
 			)
 		)
 		(property "Description" "Power symbol creates a global label with name \"+3V3\""
-			(at 143.51 121.92 0)
+			(at 132.08 118.11 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)

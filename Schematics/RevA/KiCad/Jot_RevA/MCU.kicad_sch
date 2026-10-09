@@ -2224,6 +2224,12 @@
 		)
 	)
 	(junction
+		(at 139.7 36.83)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1f26e93c-7909-48bb-b335-35948bb30b59")
+	)
+	(junction
 		(at 151.13 31.75)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2240,6 +2246,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "8548c089-b192-47f0-b08c-e9b088541fec")
+	)
+	(junction
+		(at 139.7 27.94)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f9b35eb4-0666-49c7-8bf6-f85e0e40e499")
 	)
 	(junction
 		(at 190.5 73.66)
@@ -2290,10 +2302,6 @@
 	(no_connect
 		(at 121.92 78.74)
 		(uuid "37f290c6-f0fa-4436-9547-738ff841f42b")
-	)
-	(no_connect
-		(at 121.92 132.08)
-		(uuid "40086485-9723-4cc7-8f39-8f54697d329e")
 	)
 	(no_connect
 		(at 121.92 76.2)
@@ -2708,6 +2716,16 @@
 			(type default)
 		)
 		(uuid "7c651f26-31fa-42e5-b39d-5e55bbd9a208")
+	)
+	(wire
+		(pts
+			(xy 88.9 132.08) (xy 121.92 132.08)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "820f33c0-1e26-42fa-b9ab-b4ef7dab93ca")
 	)
 	(wire
 		(pts
@@ -3172,6 +3190,30 @@
 		(uuid "670c7d48-7332-45b5-8f3b-d9cad18faead")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
 			(at 111.76 139.7 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+	)
+	(global_label "CHG_INHIBIT"
+		(shape output)
+		(at 88.9 132.08 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "7b1a9e80-28e3-4402-be81-3c9377475763")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 74.3637 132.08 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
