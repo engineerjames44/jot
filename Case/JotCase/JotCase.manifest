@@ -1,0 +1,10 @@
+{
+	"autodeskProduct": "Fusion",
+	"type": "script",
+	"author": "James Cronin",
+	"description": {
+		"": "Jot case v0: front and back shells from the concept render, with reference PCB and battery blocks"
+	},
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}
