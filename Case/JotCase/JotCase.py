@@ -73,16 +73,18 @@ CFG = {
     "mic_diameter": 1.0,
     "mic_z": 5.5,
 
-    # Reference blocks (not printed): Rev A board and a 502535 cell (5 x 25 x 35 mm, ~400 mAh)
+    # Reference blocks (not printed): Rev A board and the Adafruit 1578 cell (PKCELL LP503035, 500 mAh).
+    # Manufacturer drawing: 30 +/-0.1 x 35 +/-0.1 x 5.0 +/-0.1 mm including the protection board; sized
+    # here at the top of the tolerance. Leads (100 mm) exit from one 30 mm end, at the protection board.
     "pcb_width": 37.0,
     "pcb_length": 60.0,
     "pcb_thickness": 1.0,
     "pcb_z": 7.1,            # bottom face of the PCB
     "component_height": 3.2, # tallest top-side part (USB-C receptacle ~3.2 mm, module 2.1 mm)
-    "battery_width": 25.0,
-    "battery_length": 35.0,
-    "battery_thickness": 5.3,  # 5.0 mm cell + 0.3 mm room for swelling
-    "battery_y": -8.0,       # centre
+    "battery_width": 30.1,
+    "battery_length": 35.1,
+    "battery_thickness": 5.3,  # 5.1 mm max + 0.2 mm room for swelling (plus 0.3 mm gap to the PCB)
+    "battery_y": -6.5,       # centre: clears the bottom screw posts by 1.3 mm
     "battery_z": 1.5,        # bottom face (back wall 1.2 + clearance 0.3)
 
     # Screws: four M2 x 10 self-tapping screws from the back, through standoffs and PCB into front bosses
@@ -434,7 +436,7 @@ def run(context):
                 pcb_top, pcb_top + c["component_height"]),
             box(bx0 + bc, bx1 - bc, by0 + bc, by1 - bc, c["battery_z"], c["battery_z"] + c["battery_thickness"]),
         ]
-        names += ["REF PCB", "REF tallest parts", "REF Battery 502535"]
+        names += ["REF PCB", "REF tallest parts", "REF Battery Adafruit 1578"]
         made = add_bodies(parts, "Parts")
         for b, nm in zip(made, names):
             b.name = nm
@@ -534,11 +536,13 @@ def save_views(app, design, c):
     return out
 
 # Notes:
-# - Stack-up, back to front (12.8 mm): wall 1.2, clearance 0.3, 502535 cell 5.0 + 0.3 swelling,
+# - Stack-up, back to front (12.8 mm): wall 1.2, clearance 0.3, Adafruit 1578 cell 5.1 max + 0.2 swelling,
 #   clearance 0.3, PCB 1.0, tallest part 3.2 (USB-C receptacle), clearance 0.3, wall 1.2.
 #   The first v0 was 16 mm with the 7.8 mm Adafruit 3898 cell and 1.5 mm walls. A mid-mount USB-C would
 #   save about 1.1 mm more, but the schematic is locked for Rev A.
-# - The 502535 cell must have a protection circuit and a JST-PH lead; check its polarity with a meter.
+# - Battery: Adafruit 1578 (PKCELL LP503035, 500 mAh, protection board, JST-PH with Adafruit polarity).
+#   Check its polarity with a meter before the first plug-in. Fold the 100 mm leads; put J2 near the
+#   battery's lead end at layout.
 # - Screws: M2 x 10 self-tapping for plastic, head sits in the 2.0 mm recess in the back.
 # - Still to add: light pipes behind the dots, the button's push onto the switch actuator (depends on
 #   where the switch sits at layout), the bottom-port mic's sound path, the NFC area kept free of metal.
