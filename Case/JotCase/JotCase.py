@@ -9,7 +9,7 @@
 #
 # Axes: X = width (left to right), Y = length (bottom to top), Z = thickness (back = 0, front = T).
 # The front (Z = T) carries the three dots and the "jot" logo; the button is on the right (+X) edge;
-# USB-C is on the bottom (-Y) edge; the mic hole is on the top (+Y) edge.
+# USB-C is on the bottom (-Y) edge; the two mic holes are on the top (+Y) edge, left of centre.
 #
 # Assembly: battery into the back shell, PCB onto the four standoffs, button into its slot from inside the
 # front shell, front shell on (the lip on the back shell locates it), then four M2 x 10 self-tapping screws
@@ -56,7 +56,7 @@ CFG = {
     "button_proud": 0.8,     # how far the cap sticks out of the side
     "button_clearance": 0.2,
     "button_flange": 1.0,    # inside flange, each end along Y, stops the button falling out
-    "button_flange_thickness": 0.6,
+    "button_flange_thickness": 0.9,  # reaches SW1's plunger tip (PCB X 118.82) with about 0.08 mm to spare
     "groove_count": 3,       # grooves across the button face
     "groove_width": 0.4,
     "groove_depth": 0.3,
@@ -70,8 +70,27 @@ CFG = {
     # Mic hole (top edge). The T3902 is bottom-port: it hears through a hole in the PCB, from underneath,
     # so the case hole sits below the board (the battery doesn't reach the top end). A sealed channel from
     # here to the mic's PCB hole is added once layout fixes the mic position.
+    # Layout (8 Oct): U2 and U3 sit top-left, sound ports at x -11.5 / -7.7, y 21.3.
+    "mic_x": (-11.5, -7.7),
     "mic_diameter": 1.0,
     "mic_z": 5.5,
+
+    # Buzzer (BZ1 at x 14.5, y -0.5 on the PCB top): a slot in the right wall, below the button
+    "buzzer_y": -0.5,
+    "buzzer_slot_length": 5.0,
+    "buzzer_slot_height": 1.0,
+    "buzzer_slot_z": 9.6,
+
+    # The PCB has a tab under the USB-C socket (to y -32.6), so the lip has a gap there
+    "usb_lip_gap": 14.0,
+
+    # NFC: Molex 146236-0101 flex antenna (15 x 25 mm + tab, 0.27 mm) stuck in a pocket in the back
+    # shell's floor, ferrite towards the battery, tab end towards the top so its wires clear the battery
+    # and run to the AE1 holes (x 17, y 18.8 / 22.4). The top battery rib gets a notch for the tab.
+    "nfc_pocket_width": 15.5,
+    "nfc_pocket_length": 31.0,
+    "nfc_pocket_depth": 0.35,
+    "nfc_pocket_y": 0.0,
 
     # Reference blocks (not printed): Rev A board and the Adafruit 1578 cell (PKCELL LP503035, 500 mAh).
     # Manufacturer drawing: 30 +/-0.1 x 35 +/-0.1 x 5.0 +/-0.1 mm including the protection board; sized
@@ -275,6 +294,10 @@ def run(context):
         lin.participantBodies = [back]
         feats.extrudeFeatures.add(lin)
 
+        # Gap in the lip for the PCB's USB tab (the wall itself is untouched).
+        g = c["usb_lip_gap"] / 2
+        combine(back, add_bodies([box(-g, g, -L / 2 + wall + 0.05, -L / 2 + wall + 1.3, c["split_z"] - 0.05, c["split_z"] + c["lip_height"] + 0.2)], "USB lip gap"), CUT)
+
         # 6. Standoffs and battery ribs on the back shell; bosses on the front shell.
         sx = c["pcb_width"] / 2 - c["standoff_inset"]
         sy = c["pcb_length"] / 2 - c["standoff_inset"]
@@ -295,6 +318,13 @@ def run(context):
         ]
         combine(back, add_bodies(back_joins, "Standoffs and ribs"), JOIN)
 
+        # NFC antenna pocket in the back floor, plus a notch in the top rib where the antenna's tab passes.
+        nw, nl, nd, ny = c["nfc_pocket_width"], c["nfc_pocket_length"], c["nfc_pocket_depth"], c["nfc_pocket_y"]
+        combine(back, add_bodies([
+            box(-nw / 2, nw / 2, ny - nl / 2, ny + nl / 2, wall - nd, wall + 0.05),
+            box(-nw / 2, nw / 2, by1 - 0.1, by1 + rw + 0.1, wall - nd, rz1 + 0.1),
+        ], "NFC pocket"), CUT)
+
         front_joins = [cyl((x, y, pcb_top + c["boss_gap"]), (x, y, T - wall + 0.3), c["boss_diameter"]) for x, y in hole_xy]
         combine(front, add_bodies(front_joins, "Screw bosses"), JOIN)
 
@@ -307,7 +337,7 @@ def run(context):
         pilots = [cyl((x, y, pcb_top - 0.1), (x, y, T - c["front_skin"]), c["screw_pilot"]) for x, y in hole_xy]
         combine(front, add_bodies(pilots, "Screw pilots"), CUT)
 
-        # 7. Openings: dots, button slot, USB-C, mic.
+        # 7. Openings: dots, button slot, USB-C, mics, buzzer slot.
         tools = []
         for k in (-1, 0, 1):
             x = k * c["dot_pitch"]
@@ -320,7 +350,10 @@ def run(context):
         for s in (-1, 1):
             xe = s * (uw - uh) / 2
             tools.append(cyl((xe, y0, uz), (xe, y1, uz), uh))
-        tools.append(cyl((0, L / 2 - wall - 0.5, c["mic_z"]), (0, L / 2 + 0.5, c["mic_z"]), c["mic_diameter"]))
+        for mx in c["mic_x"]:
+            tools.append(cyl((mx, L / 2 - wall - 0.5, c["mic_z"]), (mx, L / 2 + 0.5, c["mic_z"]), c["mic_diameter"]))
+        zy, zl, zh, zz = c["buzzer_y"], c["buzzer_slot_length"], c["buzzer_slot_height"], c["buzzer_slot_z"]
+        tools.append(box(W / 2 - wall - 0.5, W / 2 + 0.5, zy - zl / 2, zy + zl / 2, zz - zh / 2, zz + zh / 2))
         tool_bodies = add_bodies(tools, "Openings")
         combine(front, tool_bodies, CUT, keep=True)
         combine(back, tool_bodies, CUT, keep=True)
@@ -541,8 +574,10 @@ def save_views(app, design, c):
 #   The first v0 was 16 mm with the 7.8 mm Adafruit 3898 cell and 1.5 mm walls. A mid-mount USB-C would
 #   save about 1.1 mm more, but the schematic is locked for Rev A.
 # - Battery: Adafruit 1578 (PKCELL LP503035, 500 mAh, protection board, JST-PH with Adafruit polarity).
-#   Check its polarity with a meter before the first plug-in. Fold the 100 mm leads; put J2 near the
-#   battery's lead end at layout.
+#   Check its polarity with a meter before the first plug-in. Its leads go at the bottom end: J2 is at
+#   the bottom right of the PCB with its opening facing down, so the wires come round the bottom edge.
 # - Screws: M2 x 10 self-tapping for plastic, head sits in the 2.0 mm recess in the back.
-# - Still to add: light pipes behind the dots, the button's push onto the switch actuator (depends on
-#   where the switch sits at layout), the bottom-port mic's sound path, the NFC area kept free of metal.
+# - Matched to the Rev A placement (8 Oct): lip gap for the USB tab, button flange thick enough to reach
+#   SW1, two mic holes over U2/U3, buzzer slot, NFC antenna pocket. Tune the flange after a test print.
+# - Still to add: light pipes behind the dots, sealed sound channels from the mic holes to the mics'
+#   PCB ports, a place for the vibration motor.
