@@ -45,7 +45,7 @@
   <tr><td>Revision</td><td>Rev A architecture, draft 5</td></tr>
   <tr><td>Author</td><td>James Cronin</td></tr>
   <tr><td>Date</td><td>8 October 2026</td></tr>
-  <tr><td>Status</td><td>Schematic complete and reviewed (Claude + Codex panel, coworker review, senior-engineer fault pass); footprints assigned; PCB layout next</td></tr>
+  <tr><td>Status</td><td>Schematic complete and reviewed (two independent design reviews and a fault-by-fault pass); footprints assigned; PCB layout next</td></tr>
   <tr><td>Companion files</td><td><code>BOM/Jot_RevA_BOM.xlsx</code> (parts, verification, design changes), <code>BOM/Jot_RevA_Pin_List.xlsx</code> (module pins, netlist), <code>Datasheets/</code></td></tr>
 </table>
 
@@ -210,7 +210,7 @@
 <p>Check the battery lead polarity, then feed the battery input from a bench supply at 3.7 V with a 50 mA current limit. Confirm the 3.3 V rail, that idle current is in the microamp range, and that nothing runs warm. Then, in order: probe the LDO output and the module's VDD; flash a blinky over SWD and check reset; scope the 32.768 kHz crystal once firmware starts it; read the flash JEDEC ID over QSPI, then write and read back across both dies; find the three I2C parts (0x19, 0x36, 0x5A); switch on the mic rail, confirm the Rec LED, and capture and play back PDM audio; pair over BLE and transfer a clip; test USB charging and the UF2 bootloader; check that CHG_INHIBIT stops and restarts charging; scope VBUS at the charger and at the module when plugging in a cable (hot-plug overshoot against 7 V and 5.8 V); with USB unplugged, confirm a reversed battery draws no current. Finally, measure every mode on the battery input with a power profiler (Nordic PPK2) and update section 4.12 with real numbers.</p>
 
 <h3>4.14 Protection summary and known Rev A limitations</h3>
-<p>Draft 5 came from a coworker's review and a senior-engineer fault pass: for every rail, what limits the current if something shorts, and what each part sees in a single fault. The 3.3 V rail is limited by the LDO's foldback current limit; the battery rail by F1 and the pack's protection; the USB input by the source. Rev A is a development build; these limits are accepted and documented, each with a test at bring-up and a Rev B fix:</p>
+<p>Draft 5 came from a fault-by-fault design review: for every rail, what limits the current if something shorts, and what each part sees in a single fault. The 3.3 V rail is limited by the LDO's foldback current limit; the battery rail by F1 and the pack's protection; the USB input by the source. Rev A is a development build; these limits are accepted and documented, each with a test at bring-up and a Rev B fix:</p>
 <table>
   <tr><th style="width:26%">Limitation</th><th style="width:37%">Why it is accepted on Rev A</th><th>Rev B fix</th></tr>
   <tr><td>Reversed battery while USB is connected: the charger drives +BATT, which turns Q6 on, and a few tens of mA can flow into the reversed cell</td><td>Keyed JST-PH plug, batteries fitted and polarity-checked by the builder; the common case (reversed pack, no USB) is blocked</td><td>Reverse-polarity switch that stays off with either USB state (Analog Devices AN-171 approach) or an ideal-diode controller</td></tr>
@@ -274,7 +274,7 @@
   <tr><td>2</td><td>2 October 2026</td><td>Parts selected and checked against datasheets; mic changed to TDK T3902; external LDO confirmed (REG0 unused); R14 and 10 µF decoupling added; QSPI pin note corrected; NFC tuning method added.</td></tr>
   <tr><td>3</td><td>3 October 2026</td><td>Crystal load-cap calculation written out with board stray; RGB LED moved to the battery rail with low-side FETs; mic footprint checked against the T3902 datasheet; power budget and bring-up plan added. 4 October: accelerometer address changed to 0x19 (SA0 high) to avoid current through its internal pull-up.</td></tr>
   <tr><td>4</td><td>5 October 2026</td><td>Charger changed from TI BQ25101 (0.4 mm-pitch DSBGA, not assemblable by JLCPCB Economic PCBA) to Microchip MCP73831 in SOT-23-5 with a 5.1 kΩ PROG resistor and 4.7 µF on VDD and VBAT. Schematic review (4 October) added a 100 kΩ pull-up on the flash chip-select and a 10 Ω resistor in series with the buzzer.</td></tr>
-  <tr><td>5</td><td>8 October 2026</td><td>After a coworker review and a Claude + Codex senior-engineer review: polyfuse F1 and reverse-polarity P-FET Q6 at the battery connector; SMF5.0A TVS on VBUS; firmware charge inhibit (Q7, Q8, R20, R21, CHG_INHIBIT on P1.11); buzzer resistor R19 to 1 W 2512; I2C pull-ups 4.7 kΩ to 2.2 kΩ; 1 kΩ series resistor on the button; flash changed to the 32 MB W25Q256JV; NFC tuning direction corrected; LED low-battery claim corrected; protection summary and known limitations added (section 4.14).</td></tr>
+  <tr><td>5</td><td>8 October 2026</td><td>After a fault-by-fault design review: polyfuse F1 and reverse-polarity P-FET Q6 at the battery connector; SMF5.0A TVS on VBUS; firmware charge inhibit (Q7, Q8, R20, R21, CHG_INHIBIT on P1.11); buzzer resistor R19 to 1 W 2512; I2C pull-ups 4.7 kΩ to 2.2 kΩ; 1 kΩ series resistor on the button; flash changed to the 32 MB W25Q256JV; NFC tuning direction corrected; LED low-battery claim corrected; protection summary and known limitations added (section 4.14).</td></tr>
 </table>
 
 </body>
