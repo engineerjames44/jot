@@ -10,7 +10,7 @@
   @page {
     size: Letter;
     margin: 0.75in 0.85in 0.8in;
-    @bottom-left { content: "Jot Rev A  |  Hardware Architecture  |  JOT-HW-001  |  Draft 5"; font: 8pt Helvetica, Arial, sans-serif; color: #777; }
+    @bottom-left { content: "Jot Rev A  |  Hardware Architecture  |  JOT-HW-001  |  Draft 6"; font: 8pt Helvetica, Arial, sans-serif; color: #777; }
     @bottom-right { content: "Page " counter(page); font: 8pt Helvetica, Arial, sans-serif; color: #777; }
   }
   :root { --ink: #1b1b1f; --muted: #5f6066; --rule: #d4d4da; --head: #ececf1; }
@@ -42,7 +42,7 @@
 
 <table class="meta">
   <tr><td>Document</td><td>JOT-HW-001</td></tr>
-  <tr><td>Revision</td><td>Rev A architecture, draft 5</td></tr>
+  <tr><td>Revision</td><td>Rev A architecture, draft 6</td></tr>
   <tr><td>Author</td><td>James Cronin</td></tr>
   <tr><td>Date</td><td>8 October 2026</td></tr>
   <tr><td>Status</td><td>Schematic complete and reviewed (two independent design reviews and a fault-by-fault pass); footprints assigned; PCB layout next</td></tr>
@@ -61,7 +61,7 @@
   <tr><td>R4</td><td>Feedback without looking at the device</td><td>LRA haptic motor via DRV2605L; RGB status LED; 4 kHz buzzer</td></tr>
   <tr><td>R5</td><td>Days of standby; accurate battery %</td><td>TPS7A02 LDO (25 nA quiescent current), System OFF sleep, MAX17048 fuel gauge</td></tr>
   <tr><td>R6</td><td>Charge and update firmware over USB-C</td><td>USB data wired to the nRF52840; UF2 bootloader for drag-and-drop updates</td></tr>
-  <tr><td>R7</td><td>Simple pairing</td><td>NFC tag antenna on the PCB: tap Jot to the iPhone</td></tr>
+  <tr><td>R7</td><td>Simple pairing</td><td>NFC tag with a flex antenna inside the back shell: tap the back of Jot to the iPhone</td></tr>
   <tr><td>R8</td><td>Room to improve audio later</td><td>Footprint for a second PDM mic (not populated on Rev A)</td></tr>
 </table>
 
@@ -146,7 +146,7 @@
     <text x="228" y="388">W25Q256JV</text><text x="228" y="400">32 MB NOR flash</text><text x="228" y="412">QSPI</text><text x="228" y="424">clip buffer</text>
     <text x="380" y="388">LIS2DW12 accel</text><text x="380" y="400">+ wake interrupt</text><text x="380" y="412">DRV2605L</text><text x="380" y="424">+ VG0832012 LRA</text>
     <text x="532" y="388">Side button (wake)</text><text x="532" y="400">Rec LED (on mic rail)</text><text x="532" y="412">RGB status LED</text><text x="532" y="424">4 kHz buzzer</text>
-    <text x="684" y="388">PCB coil antenna</text><text x="684" y="400">2 tuning caps</text><text x="684" y="412">tuned per nWP-026</text><text x="684" y="424">tap to pair</text>
+    <text x="684" y="388">Molex flex antenna</text><text x="684" y="400">2 tuning caps</text><text x="684" y="412">+ 2 spare (DNP)</text><text x="684" y="424">tap to pair</text>
   </g>
 </svg>
 </div>
@@ -188,13 +188,10 @@
 <p>Side button: TS-1010-C-A right-angle tactile switch to ground through a 1 kΩ series resistor (R5, placed at the module) that limits ESD current into the pin, using the internal pull-up; it is also the wake source. Rec LED: red 0603 on the mic rail through 1 kΩ. RGB status LED: common-anode 1615 RGB with the anode on the battery rail. Each cathode is switched to ground by an AO3400A (gate from a PWM pin, 100 kΩ pull-down) through 1 kΩ (red) and 560 Ω (green, blue), about 2 mA at 3.7 V. Green and blue need about 2.6 V at 2 mA (up to about 3.0 V worst case), and the 3.3 V rail falls to about 3.0 V as the battery empties, so driving them from a 3.3 V pin left no headroom whatever the resistor. From the battery they keep more headroom: at the 3.3 V firmware cutoff green and blue still get about 0.5 mA (dim but lit); a 3.0 V cell leaves no guaranteed margin, so use red for the low-battery warning. No GPIO sees the battery voltage. Draft 2 drove a common-cathode TJ-S1615 from GPIOs through 100 Ω, which does not fix the headroom. Buzzer: MLT-5020 magnetic buzzer, 4 kHz, from the battery rail through a 10 Ω, 1 W series resistor in a 2512 package (R19; the buzzer is rated 2 to 4 V and the battery reaches 4.2 V; if Q1 were left on, R19 would dissipate about 0.49 W) and an AO3400A low-side MOSFET, with a 1N4148W flyback diode across the buzzer, for confirmation tones and a find-my-Jot feature.</p>
 
 <h3>4.11 NFC</h3>
-<p>The nRF52840 has an NFC tag built in. Rev A adds a coil antenna drawn in copper on the PCB and two equal tuning capacitors (C0G, 0402) from NFC1 and NFC2 to ground, forming an LC tank tuned to 13.56 MHz. Tapping Jot to the iPhone can open the app or start pairing. The tuning follows Nordic white paper nWP-026 (in <code>Datasheets/NFC/</code>):</p>
+<p>The nRF52840 has an NFC tag built in. Rev A uses an off-the-shelf flexible antenna, the Molex 146236-0101 (15 × 25 mm plus a solder-pad tab, 0.27 mm thick, 3.1 µH, Q 51.8, with a ferrite layer), stuck into a 0.35 mm pocket in the back shell's floor with the ferrite towards the battery. Two fine wires run from its tab, past the top end of the battery, to AE1: two solder-wire holes at the right edge of the PCB, about 12 mm from the Bluetooth antenna. Two equal C0G tuning capacitors (C16, C17) from NFC1 and NFC2 to ground form an LC tank at 13.56 MHz. Tapping the back of Jot to the iPhone can open the app or start pairing.</p>
+<p>A coil drawn on the PCB was the plan until layout. It needs about 20 × 20 mm with no copper on any layer inside it, and the only metal-free part of the board is the Bluetooth antenna corner; everywhere else the battery sits behind the board. The ferrite-backed flex antenna takes no board area and works over the battery, the way a phone's NFC antenna does.</p>
 <p class="formula">C<sub>tune</sub> = 2 / ((2π · 13.56 MHz)<sup>2</sup> · L<sub>ant</sub>) − C<sub>p</sub> − C<sub>int</sub>, &nbsp; C<sub>int</sub> ≈ 4 pF</p>
-<table>
-  <tr><th>Coil inductance L<sub>ant</sub></th><td>1.0 µH</td><td>1.5 µH</td><td>2.0 µH</td><td>2.5 µH</td></tr>
-  <tr><th>Starting C<sub>tune</sub> (C<sub>p</sub> = 0)</th><td>~270 pF</td><td>~180 pF</td><td>~134 pF</td><td>~106 pF</td></tr>
-</table>
-<p>Steps: (1) draw the coil once the board outline is known and calculate its inductance from its dimensions; (2) fit the estimated capacitor; (3) tune on the built board with a network analyzer (S11 dip at 13.56 MHz; raise C if the dip is above 13.56 MHz, lower it if below, since f = 1 / (2π√(LC))). Avoid the NFC Forum reference poller sizes (46 × 32 mm and 25 × 20 mm) to prevent overcoupling.</p>
+<p>From the nRF52840 Product Specification (v1.11, section 6.14.10, page 461) and Nordic white paper nWP-026 (in <code>Datasheets/NFC/</code>), with L<sub>ant</sub> = 3.1 µH and C<sub>p</sub> ≈ 2 pF: 88.9 − 2 − 4 = 82.9 pF, so C16 and C17 are 82 pF (C0G, 0402). The datasheet inductance is measured in free space; the battery behind the ferrite will shift it. C18 and C19 are empty 0402 pads in parallel with C16 and C17 for tuning on the first built board: measure the resonance (S11 dip) with a network analyzer or a phone read-range test, then add equal capacitance to both sides if the resonance is above 13.56 MHz, or swap C16/C17 for a lower value if it is below (f = 1 / (2π√(LC))). Keep both sides equal and the two tracks mirrored.</p>
 
 <h3>4.12 Power budget (estimate)</h3>
 <p>First-pass estimates from the component datasheets (typical values at 25 °C), to be replaced by measurements at bring-up.</p>
@@ -230,7 +227,7 @@
   <tr><td>QSPI</td><td>6 (clock, chip select, 4 data)</td><td>32 MB flash</td><td>SPI with four data lines for speed. The nRF52840 selects QSPI pins in firmware; Rev A uses the nRF52840 DK's set (CSN P0.17, SCK P0.19, IO0 to IO3 on P0.20 to P0.23) with high-drive outputs. The PS lists P0.18/P1.00 as an alternative, but P0.18 is the reset pin.</td></tr>
   <tr><td>USB</td><td>2 (D+, D-)</td><td>Firmware updates, debug</td><td>Full-speed USB is built into the nRF52840; no extra USB chip needed.</td></tr>
   <tr><td>SWD</td><td>2 (SWDIO, SWCLK) + GND, 3.3 V, reset</td><td>Programming and debugging</td><td>Used with a debug probe for the first flash and for step-through debugging.</td></tr>
-  <tr><td>NFC</td><td>2 (NFC1, NFC2)</td><td>Coil antenna</td><td>Dedicated pins on the nRF52840; the coil and caps form a tuned circuit at 13.56 MHz.</td></tr>
+  <tr><td>NFC</td><td>2 (NFC1, NFC2)</td><td>Flex antenna (AE1)</td><td>Dedicated pins on the nRF52840; the antenna and caps form a tuned circuit at 13.56 MHz.</td></tr>
   <tr><td>GPIO / PWM</td><td>1 per signal</td><td>Button, LEDs, buzzer, mic power switch, interrupts</td><td>Plain digital pins. PWM sets LED brightness and buzzer tone. Pins near the radio are low-frequency only and carry only slow signals.</td></tr>
 </table>
 
@@ -260,7 +257,7 @@
   <tr><td>5</td><td>Choose the LRA size to fit the case</td><td class="open">Part done</td><td>Vybronics VG0832012 (8 mm); confirm fit in the case</td></tr>
   <tr><td>6</td><td>Battery capacity and dimensions (set by the case)</td><td class="done">Done</td><td>Adafruit 1578 (PKCELL LP503035), 500 mAh, 30 × 35 × 5.0 mm; fits the 12.8 mm case; check its polarity with a meter before first plug-in</td></tr>
   <tr><td>7</td><td>Assign every signal to a module pin (pin map)</td><td class="done">Done</td><td>See <code>BOM/Jot_RevA_Pin_List.xlsx</code></td></tr>
-  <tr><td>8</td><td>NFC coil size and tuning capacitor values</td><td class="open">Open</td><td>Method and starting values in section 4.11; coil depends on the board outline</td></tr>
+  <tr><td>8</td><td>NFC antenna and tuning capacitor values</td><td class="open">Part done</td><td>Molex 146236-0101 chosen, C16/C17 82 pF calculated (section 4.11). Tune on the first built board with C18/C19</td></tr>
   <tr><td>9</td><td>Pick an in-stock common-anode 1615 RGB LED for the battery-rail drive (section 4.10)</td><td class="done">Done</td><td>TOGIALED TJ-S1615SW6TGLCCYRGB-A5 (LCSC C273610), same family and pads as the common-cathode part it replaces: pin 1 anode, 2 blue, 3 green, 4 red. Q3-Q5 AO3400A with R15-R17 100k pull-downs; R8 1k, R9/R10 560 Ω. BOM and pin list updated 4 October.</td></tr>
   <tr><td>10</td><td>Give the mic its own T3902 symbol</td><td class="done">Done</td><td>Jot:T3902 symbol with the TDK datasheet and MPN; it keeps KiCad's Knowles LGA-5 footprint, whose pins, pads and port were checked against the T3902 datasheet and match. Netlist unchanged</td></tr>
   <tr><td>11</td><td>Send the layout to Raytac for a free antenna keep-out review</td><td class="open">Open</td><td>Module at the board edge; no copper on any layer in the keep-out (Raytac datasheet section 2.3)</td></tr>
@@ -275,6 +272,7 @@
   <tr><td>3</td><td>3 October 2026</td><td>Crystal load-cap calculation written out with board stray; RGB LED moved to the battery rail with low-side FETs; mic footprint checked against the T3902 datasheet; power budget and bring-up plan added. 4 October: accelerometer address changed to 0x19 (SA0 high) to avoid current through its internal pull-up.</td></tr>
   <tr><td>4</td><td>5 October 2026</td><td>Charger changed from TI BQ25101 (0.4 mm-pitch DSBGA, not assemblable by JLCPCB Economic PCBA) to Microchip MCP73831 in SOT-23-5 with a 5.1 kΩ PROG resistor and 4.7 µF on VDD and VBAT. Schematic review (4 October) added a 100 kΩ pull-up on the flash chip-select and a 10 Ω resistor in series with the buzzer.</td></tr>
   <tr><td>5</td><td>8 October 2026</td><td>After a fault-by-fault design review: polyfuse F1 and reverse-polarity P-FET Q6 at the battery connector; SMF5.0A TVS on VBUS; firmware charge inhibit (Q7, Q8, R20, R21, CHG_INHIBIT on P1.11); buzzer resistor R19 to 1 W 2512; I2C pull-ups 4.7 kΩ to 2.2 kΩ; 1 kΩ series resistor on the button; flash changed to the 32 MB W25Q256JV; NFC tuning direction corrected; LED low-battery claim corrected; protection summary and known limitations added (section 4.14). Battery changed to the Adafruit 1578 (500 mAh, 5.0 mm thick) for a 12.8 mm case.</td></tr>
+  <tr><td>6</td><td>14 October 2026</td><td>NFC antenna changed from a PCB coil to a Molex 146236-0101 ferrite-backed flex antenna in the back shell, found at layout to be the only way to fit NFC beside the battery and the Bluetooth antenna. AE1 became two solder-wire holes; C16/C17 recalculated to 82 pF; C18/C19 added as unpopulated tuning pads (section 4.11).</td></tr>
 </table>
 
 </body>
