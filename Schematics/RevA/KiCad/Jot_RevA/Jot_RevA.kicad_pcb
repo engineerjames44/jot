@@ -7692,7 +7692,7 @@
 	(footprint "Resistor_SMD:R_0402_1005Metric"
 		(layer "F.Cu")
 		(uuid "607ce3a2-5e65-486e-a7c0-ba172370ef6e")
-		(at 107.8 96.6)
+		(at 107.8 96.6 180)
 		(descr "Resistor SMD 0402 (1005 Metric), square (rectangular) end terminal, IPC-7351 nominal, (Body size source: IPC-SM-782 page 72, https://www.pcb-3d.com/wordpress/wp-content/uploads/ipc-sm-782a_amendment_1_and_2.pdf)")
 		(tags "resistor")
 		(property "Reference" "R7"
@@ -7764,16 +7764,6 @@
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
-			(start -0.153641 -0.38)
-			(end 0.153641 -0.38)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "F.SilkS")
-			(uuid "e96bb40d-1152-4f72-8b08-acaf0ddbaad3")
-		)
-		(fp_line
 			(start -0.153641 0.38)
 			(end 0.153641 0.38)
 			(stroke
@@ -7782,6 +7772,16 @@
 			)
 			(layer "F.SilkS")
 			(uuid "5845f0c4-b343-4f1c-b2f9-5386ac4340d7")
+		)
+		(fp_line
+			(start -0.153641 -0.38)
+			(end 0.153641 -0.38)
+			(stroke
+				(width 0.12)
+				(type solid)
+			)
+			(layer "F.SilkS")
+			(uuid "e96bb40d-1152-4f72-8b08-acaf0ddbaad3")
 		)
 		(fp_rect
 			(start -0.93 -0.47)
@@ -7817,7 +7817,7 @@
 			)
 		)
 		(pad "1" smd roundrect
-			(at -0.51 0)
+			(at -0.51 0 180)
 			(size 0.54 0.64)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
@@ -7826,7 +7826,7 @@
 			(uuid "fbb35ad2-db60-432a-abfe-a669ff9bef44")
 		)
 		(pad "2" smd roundrect
-			(at 0.51 0)
+			(at 0.51 0 180)
 			(size 0.54 0.64)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.25)
@@ -9137,11 +9137,11 @@
 		(locked yes)
 		(layer "F.Cu")
 		(uuid "780b0932-4acc-481c-a36e-c09795355286")
-		(at 100 96.6)
+		(at 100 96.6 180)
 		(descr "TOGIALED TJ-S1615SW6TGLCC*RGB-A5, 1.6x1.5 mm 4-pad RGB LED. Pads from datasheet 'Recommend Pad Layout': 2.60 x 1.60 overall, 0.90 gap between columns, 0.50 gap between rows -> 0.85 x 0.55 mm pads. Top view: pad 1 top-right (common anode on the CY part), 2 top-left, 3 bottom-left, 4 bottom-right.")
 		(tags "LED RGB 1615 TOGIALED")
 		(property "Reference" "D2"
-			(at 0 -1.6 0)
+			(at 0 -1.6 180)
 			(layer "F.SilkS")
 			(uuid "2c49c4e4-fcdd-4770-a180-c5d378c4706c")
 			(effects
@@ -9152,7 +9152,7 @@
 			)
 		)
 		(property "Value" "TJ-S1615SW6TGLCCYRGB-A5"
-			(at 0 1.6 0)
+			(at 0 1.6 180)
 			(layer "F.Fab")
 			(uuid "7c095a6d-5de1-4fb0-b556-1144800a2d1a")
 			(effects
@@ -9163,7 +9163,7 @@
 			)
 		)
 		(property "Datasheet" "${KIPRJMOD}/../../Datasheets/UI/TJ-S1615SW6TGLCCYRGB-A5_RGB_LED.pdf"
-			(at 0 0 0)
+			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "1af6af30-35f9-4050-96f0-0fc7028cc7bf")
@@ -9174,7 +9174,7 @@
 			)
 		)
 		(property "Description" "TOGIALED RGB LED, common anode, 1.6x1.5 mm SMD-4 (pin 1 anode, 2 blue, 3 green, 4 red cathode); LCSC C273610"
-			(at 0 0 0)
+			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "4b7e6b5c-b11c-4bc6-98b7-e995897e981f")
@@ -9197,16 +9197,6 @@
 		(attr smd)
 		(duplicate_pad_numbers_are_jumpers no)
 		(fp_line
-			(start -0.35 -0.95)
-			(end 0.35 -0.95)
-			(stroke
-				(width 0.12)
-				(type solid)
-			)
-			(layer "F.SilkS")
-			(uuid "2900d08b-6aee-4d9a-874a-db712f629d82")
-		)
-		(fp_line
 			(start -0.35 0.95)
 			(end 0.35 0.95)
 			(stroke
@@ -9215,6 +9205,16 @@
 			)
 			(layer "F.SilkS")
 			(uuid "aa3bd31e-55bf-48ad-9c2b-76245b5d2301")
+		)
+		(fp_line
+			(start -0.35 -0.95)
+			(end 0.35 -0.95)
+			(stroke
+				(width 0.12)
+				(type solid)
+			)
+			(layer "F.SilkS")
+			(uuid "2900d08b-6aee-4d9a-874a-db712f629d82")
 		)
 		(fp_circle
 			(center 1.55 -0.9)
@@ -9239,34 +9239,14 @@
 			(uuid "b4ffc82b-24e7-4763-9fb8-929544031f1a")
 		)
 		(fp_line
-			(start -0.8 -0.75)
-			(end 0.8 -0.75)
+			(start 0.8 0.75)
+			(end -0.8 0.75)
 			(stroke
 				(width 0.1)
 				(type solid)
 			)
 			(layer "F.Fab")
-			(uuid "9c25d4fe-5279-49f2-9d76-1e86d03b09fe")
-		)
-		(fp_line
-			(start -0.8 0.75)
-			(end -0.8 -0.75)
-			(stroke
-				(width 0.1)
-				(type solid)
-			)
-			(layer "F.Fab")
-			(uuid "b329cd4e-078f-4e1b-9b4e-54cf6163050c")
-		)
-		(fp_line
-			(start 0.4 -0.75)
-			(end 0.8 -0.35)
-			(stroke
-				(width 0.1)
-				(type solid)
-			)
-			(layer "F.Fab")
-			(uuid "5070d01b-dca2-47cb-b223-a7b524129ae5")
+			(uuid "b32efded-6b59-498b-8fae-ac1e6f17a676")
 		)
 		(fp_line
 			(start 0.8 -0.75)
@@ -9279,17 +9259,37 @@
 			(uuid "9c12532f-71b0-480e-9032-a364d1358d34")
 		)
 		(fp_line
-			(start 0.8 0.75)
-			(end -0.8 0.75)
+			(start 0.4 -0.75)
+			(end 0.8 -0.35)
 			(stroke
 				(width 0.1)
 				(type solid)
 			)
 			(layer "F.Fab")
-			(uuid "b32efded-6b59-498b-8fae-ac1e6f17a676")
+			(uuid "5070d01b-dca2-47cb-b223-a7b524129ae5")
+		)
+		(fp_line
+			(start -0.8 0.75)
+			(end -0.8 -0.75)
+			(stroke
+				(width 0.1)
+				(type solid)
+			)
+			(layer "F.Fab")
+			(uuid "b329cd4e-078f-4e1b-9b4e-54cf6163050c")
+		)
+		(fp_line
+			(start -0.8 -0.75)
+			(end 0.8 -0.75)
+			(stroke
+				(width 0.1)
+				(type solid)
+			)
+			(layer "F.Fab")
+			(uuid "9c25d4fe-5279-49f2-9d76-1e86d03b09fe")
 		)
 		(pad "1" smd roundrect
-			(at 0.875 -0.525)
+			(at 0.875 -0.525 180)
 			(size 0.85 0.55)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.15)
@@ -9299,7 +9299,7 @@
 			(uuid "0839a87d-3fb5-482e-8c63-1ea1d98ed5b5")
 		)
 		(pad "2" smd roundrect
-			(at -0.875 -0.525)
+			(at -0.875 -0.525 180)
 			(size 0.85 0.55)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.15)
@@ -9309,7 +9309,7 @@
 			(uuid "10a50328-40fb-474f-b9ca-c4c75019184b")
 		)
 		(pad "3" smd roundrect
-			(at -0.875 0.525)
+			(at -0.875 0.525 180)
 			(size 0.85 0.55)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.15)
@@ -9319,7 +9319,7 @@
 			(uuid "af44d357-1c88-48e5-b88c-afafe0fb00ba")
 		)
 		(pad "4" smd roundrect
-			(at 0.875 0.525)
+			(at 0.875 0.525 180)
 			(size 0.85 0.55)
 			(layers "F.Cu" "F.Mask" "F.Paste")
 			(roundrect_rratio 0.15)
@@ -20357,20 +20357,28 @@
 		(uuid "f79d3fac-1658-44ae-a0f4-8f2c2f79a5fb")
 	)
 	(segment
+		(start 99.8625 90.35)
+		(end 98.4025 91.81)
+		(width 0.2)
+		(layer "F.Cu")
+		(net "LED_G")
+		(uuid "3ea507fd-3550-417e-8d87-e1b1c32ea461")
+	)
+	(segment
+		(start 98.4025 91.81)
+		(end 98.2 91.81)
+		(width 0.2)
+		(layer "F.Cu")
+		(net "LED_G")
+		(uuid "4a1db034-5050-4a09-9768-a8bea6e3b126")
+	)
+	(segment
 		(start 99.52 110)
 		(end 99.5 109.98)
 		(width 0.5)
 		(layer "F.Cu")
 		(net "+BATT")
 		(uuid "00dcdec8-6a62-4c47-a87e-c434d9431402")
-	)
-	(segment
-		(start 101.425 96.075)
-		(end 102.5 95)
-		(width 0.5)
-		(layer "F.Cu")
-		(net "+BATT")
-		(uuid "1cdede8c-ac00-4cf1-b3cd-47bdd6d8e7f2")
 	)
 	(segment
 		(start 100.5 110)
@@ -20525,12 +20533,12 @@
 		(uuid "d983389d-3e77-4d76-b907-84d468fee135")
 	)
 	(segment
-		(start 100.875 96.075)
-		(end 101.425 96.075)
+		(start 99.12 97.12)
+		(end 98.3 98)
 		(width 0.5)
 		(layer "F.Cu")
 		(net "+BATT")
-		(uuid "e1d28ae4-0802-4159-9213-c0ff62acc1cf")
+		(uuid "dfc99b16-5575-4730-8501-dfda0c7d485e")
 	)
 	(segment
 		(start 109.8625 90.05)
@@ -20597,6 +20605,14 @@
 		(uuid "21f3a02c-875b-4536-bcf1-51497c006454")
 	)
 	(via
+		(at 98.3 98)
+		(size 0.6)
+		(drill 0.3)
+		(layers "F.Cu" "B.Cu")
+		(net "+BATT")
+		(uuid "444efd62-4e92-4191-af2f-38eded858e66")
+	)
+	(via
 		(at 96.4 115.05)
 		(size 0.6)
 		(drill 0.3)
@@ -20645,14 +20661,6 @@
 		(layers "F.Cu" "B.Cu")
 		(net "+BATT")
 		(uuid "e0a61a7b-bec6-406f-900e-f70dd457b4c7")
-	)
-	(via
-		(at 102.5 95)
-		(size 0.6)
-		(drill 0.3)
-		(layers "F.Cu" "B.Cu")
-		(net "+BATT")
-		(uuid "e1179735-6fb4-4adb-86e8-eb9282f537ea")
 	)
 	(via
 		(at 95.5 114)
@@ -21146,6 +21154,22 @@
 		(layer "F.Cu")
 		(net "/Power/BATT_FUSED")
 		(uuid "f797fbc5-c281-4d05-a7da-c46b4abbbf8e")
+	)
+	(segment
+		(start 94.6625 90.35)
+		(end 93.2025 91.81)
+		(width 0.2)
+		(layer "F.Cu")
+		(net "LED_R")
+		(uuid "20b27e25-11a4-418a-8308-c464d3be65f4")
+	)
+	(segment
+		(start 93.2025 91.81)
+		(end 93 91.81)
+		(width 0.2)
+		(layer "F.Cu")
+		(net "LED_R")
+		(uuid "2c9a5a59-05d2-475f-814f-d3ffd3f697dc")
 	)
 	(segment
 		(start 108.47 73.95)
