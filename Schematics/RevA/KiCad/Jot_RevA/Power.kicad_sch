@@ -4073,6 +4073,17 @@
 			(embedded_fonts no)
 		)
 	)
+	(text "CHG_INHIBIT HIGH = charging off\n(Q8 on, Q7 off, PROG floats).\nLOW or MCU off = charging on\n(R20 holds Q7 on from VBUS)."
+		(exclude_from_sim no)
+		(at 149.86 139.7 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "6a0d7c1e-3b2f-4d8a-9c41-2e7f5b9d0a11")
+	)
 	(text "1 = BATT+ (red), 2 = BATT− (black)"
 		(exclude_from_sim no)
 		(at 188.214 108.966 0)
@@ -5273,17 +5284,6 @@
 			)
 		)
 	)
-	(text "CHG_INHIBIT HIGH = charging off\n(Q8 on, Q7 off, PROG floats).\nLOW or MCU off = charging on\n(R20 holds Q7 on from VBUS)."
-		(exclude_from_sim no)
-		(at 149.86 139.7 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left bottom)
-		)
-		(uuid "6a0d7c1e-3b2f-4d8a-9c41-2e7f5b9d0a11")
-	)
 	(symbol
 		(lib_id "Device:Polyfuse")
 		(at 207.01 119.38 0)
@@ -5450,10 +5450,10 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
+		(in_pos_files no)
+		(dnp yes)
 		(uuid "1844882a-7642-4621-bed2-a4a5ed7e2689")
 		(property "Reference" "J2"
 			(at 191.77 102.8699 0)
@@ -5466,7 +5466,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "Battery"
+		(property "Value" "Battery wires"
 			(at 191.77 106.68 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5477,7 +5477,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_JST:JST_PH_S2B-PH-SM4-TB_1x02-1MP_P2.00mm_Horizontal"
+		(property "Footprint" "Connector_Wire:SolderWire-0.15sqmm_1x02_P4mm_D0.5mm_OD1.5mm"
 			(at 189.23 102.87 0)
 			(hide yes)
 			(show_name no)

@@ -33,7 +33,7 @@ CFG = {
 
     # Lip: a thin ring on the back shell that slides inside the front shell to line the halves up
     "lip_height": 0.7,
-    "lip_thickness": 0.6,
+    "lip_thickness": 0.8,    # 0.6 was flagged as a thin wall by JLC3DP; 0.35 mm still clear of the PCB edge
     "lip_clearance": 0.15,
 
     # Front details
@@ -80,6 +80,12 @@ CFG = {
     "buzzer_slot_length": 5.0,
     "buzzer_slot_height": 1.0,
     "buzzer_slot_z": 9.6,
+
+    # SW1 (TS-1010, 3.5 mm tall) is 0.3 mm taller than the 3.2 mm allowed for parts, so it would touch the
+    # front shell's inside face. A shallow pocket in that face over its courtyard (PCB x 15.3..18.9,
+    # y 12.6..17.4) leaves 0.4 mm; the front wall is 0.8 mm thick there, the same as front_skin.
+    "sw1_pocket": (15.0, 19.3, 12.2, 17.8),  # x0, x1, y0, y1
+    "sw1_pocket_depth": 0.4,
 
     # The PCB has a tab under the USB-C socket (to y -32.6), so the lip has a gap there
     "usb_lip_gap": 14.0,
@@ -336,6 +342,8 @@ def run(context):
         combine(back, add_bodies(back_cuts, "Screw clearance"), CUT)
         pilots = [cyl((x, y, pcb_top - 0.1), (x, y, T - c["front_skin"]), c["screw_pilot"]) for x, y in hole_xy]
         combine(front, add_bodies(pilots, "Screw pilots"), CUT)
+        px0, px1, py0, py1 = c["sw1_pocket"]
+        combine(front, add_bodies([box(px0, px1, py0, py1, T - wall - 0.1, T - wall + c["sw1_pocket_depth"])], "SW1 pocket"), CUT)
 
         # 7. Openings: dots, button slot, USB-C, mics, buzzer slot.
         tools = []
@@ -570,12 +578,15 @@ def save_views(app, design, c):
 
 # Notes:
 # - Stack-up, back to front (12.8 mm): wall 1.2, clearance 0.3, Adafruit 1578 cell 5.1 max + 0.2 swelling,
-#   clearance 0.3, PCB 1.0, tallest part 3.2 (USB-C receptacle), clearance 0.3, wall 1.2.
+#   clearance 0.3, PCB 1.0, tallest part 3.2 (USB-C receptacle), clearance 0.3, wall 1.2. SW1 (3.5 mm)
+#   sits in a 0.4 mm pocket in the front wall.
 #   The first v0 was 16 mm with the 7.8 mm Adafruit 3898 cell and 1.5 mm walls. A mid-mount USB-C would
 #   save about 1.1 mm more, but the schematic is locked for Rev A.
-# - Battery: Adafruit 1578 (PKCELL LP503035, 500 mAh, protection board, JST-PH with Adafruit polarity).
-#   Check its polarity with a meter before the first plug-in. Its leads go at the bottom end: J2 is at
-#   the bottom right of the PCB with its opening facing down, so the wires come round the bottom edge.
+# - Battery: Adafruit 1578 (PKCELL LP503035, 500 mAh, protection board). There is no connector: a JST-PH
+#   header is 5.5 mm tall and would not fit. Fit the cell with its lead end at the bottom, cut the plug off
+#   (one wire at a time) and solder the leads up through the J2 holes at the bottom left of the PCB
+#   (x -11.4 = +, x -7.4 = -, y -27.3). They pass over the bottom rib (top at Z 2.7), 2.3 mm clear of the
+#   bottom-left screw post. Check red is + with a meter before soldering.
 # - Screws: M2 x 10 self-tapping for plastic, head sits in the 2.0 mm recess in the back.
 # - Matched to the Rev A placement (8 Oct): lip gap for the USB tab, button flange thick enough to reach
 #   SW1, two mic holes over U2/U3, buzzer slot, NFC antenna pocket. Tune the flange after a test print.
