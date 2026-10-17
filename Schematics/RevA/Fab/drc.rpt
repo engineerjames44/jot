@@ -1,0 +1,27 @@
+** Drc report for Jot_RevA.kicad_pcb **
+** Created on 2026-10-17T00:20:36 **
+** Report includes: Errors, Warnings **
+
+** Found 3 DRC violations **
+[lib_footprint_mismatch]: Footprint 'KEY-SMD_TX-1010-X-X' does not match copy in library 'Jot'
+    Local override; warning
+    @(116.3500 mm, 85.0000 mm): Footprint SW1
+[lib_footprint_mismatch]: Footprint 'Raytac_MDBT50Q' does not match copy in library 'RF_Module'
+    Local override; warning
+    @(100.0000 mm, 77.7500 mm): Footprint U1
+[lib_footprint_mismatch]: Footprint 'USB_C_Receptacle_HRO_TYPE-C-31-M-12' does not match copy in library 'Connector_USB'
+    Local override; warning
+    @(100.0000 mm, 129.4300 mm): Footprint J1
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **
