@@ -47,7 +47,7 @@ Check both show as matched to that stock, not as new purchases.
 ### Ordering steps
 
 1. Upload `Jot_RevA_Gerbers.zip`: 4 layers, 1.0 mm, 5 boards. Check the viewer shows 37 × 62.6 mm.
-2. Turn on PCB Assembly: Economic, top side, 2 boards.
+2. Turn on PCB Assembly: **Standard** (U7, the LIS2DW12 accelerometer, is Standard-only: LGA, X-ray inspection), top side, all 5 boards.
 3. Upload the BOM and CPL. Confirm every line matched its LCSC part.
 4. In the placement preview, check every polarised part against the table below. JLCPCB's part models don't
    always use KiCad's zero rotation (SOT-23, TSSOP, DFN, WSON and LGA parts are the usual ones to come out 90 or
