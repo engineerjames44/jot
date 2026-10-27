@@ -74,6 +74,19 @@ CFG = {
     "mic_x": (-11.5, -7.7),
     "mic_diameter": 1.0,
     "mic_z": 5.5,
+    # Sound channels (27 Oct): a block on the back shell under the board, with one open-topped trough per mic
+    # from its case hole to its PCB sound port (Rev A: x -11.5 / -7.7, y 21.27). The PCB's underside closes
+    # the troughs. The block top is 0.1 mm below the board; a strip of thin tape on top seals it fully.
+    "mic_port_y": 21.27,
+    "mic_trough_width": 1.2,
+    "mic_trough_floor": 5.0,   # bottom of the trough, level with the bottom of the case hole
+    "mic_block": (-13.0, -6.2, 19.8),  # x0, x1, y0; it runs to the top wall
+
+    # Light wells (27 Oct): an opaque tube inside the front shell over each LED, so each dot shows only its
+    # own LED. They stop 1.1 mm above the board, clear of the LEDs (0.8 mm tall) and their resistors.
+    "well_outer": 3.2,         # 0.8 mm walls (JLC3DP flags 0.6 mm as thin)
+    "well_inner": 1.6,
+    "well_gap": 1.1,           # from the PCB top to the bottom of the tube
 
     # Buzzer (BZ1 at x 14.5, y -0.5 on the PCB top): a slot in the right wall, below the button
     "buzzer_y": -0.5,
@@ -334,6 +347,19 @@ def run(context):
         front_joins = [cyl((x, y, pcb_top + c["boss_gap"]), (x, y, T - wall + 0.3), c["boss_diameter"]) for x, y in hole_xy]
         combine(front, add_bodies(front_joins, "Screw bosses"), JOIN)
 
+        # Light wells over the three LEDs, and the mic sound channels under the board.
+        wz0 = pcb_top + c["well_gap"]
+        wells = [cyl((k * c["dot_pitch"], c["dot_y"], wz0), (k * c["dot_pitch"], c["dot_y"], T - wall + 0.3), c["well_outer"]) for k in (-1, 0, 1)]
+        combine(front, add_bodies(wells, "Light wells"), JOIN)
+        bores = [cyl((k * c["dot_pitch"], c["dot_y"], wz0 - 0.1), (k * c["dot_pitch"], c["dot_y"], T - wall), c["well_inner"]) for k in (-1, 0, 1)]
+        combine(front, add_bodies(bores, "Light well bores"), CUT)
+
+        mx0, mx1, my0 = c["mic_block"]
+        combine(back, add_bodies([box(mx0, mx1, my0, L / 2 - wall + 0.3, wall - 0.3, c["split_z"])], "Mic channel block"), JOIN)
+        tw = c["mic_trough_width"]
+        troughs = [box(mx - tw / 2, mx + tw / 2, c["mic_port_y"] - 0.6, L / 2 - wall + 0.1, c["mic_trough_floor"], c["split_z"] + 0.1) for mx in c["mic_x"]]
+        combine(back, add_bodies(troughs, "Mic channels"), CUT)
+
         # Screw holes: clearance + head recess through the back, pilot holes up into the front bosses.
         back_cuts = []
         for x, y in hole_xy:
@@ -590,5 +616,5 @@ def save_views(app, design, c):
 # - Screws: M2 x 10 self-tapping for plastic, head sits in the 2.0 mm recess in the back.
 # - Matched to the Rev A placement (8 Oct): lip gap for the USB tab, button flange thick enough to reach
 #   SW1, two mic holes over U2/U3, buzzer slot, NFC antenna pocket. Tune the flange after a test print.
-# - Still to add: light pipes behind the dots, sealed sound channels from the mic holes to the mics'
-#   PCB ports, a place for the vibration motor.
+# - Light wells behind the dots and mic sound channels added 27 Oct. The dot holes are open; fill them with
+#   a drop of clear UV resin for a diffused, sealed dot. Still to add: a place for the vibration motor.
